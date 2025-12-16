@@ -33,7 +33,8 @@ jobs:
           # You can customize this. For example: ["TODO", "FIXME", "REFACTOR"]
           # Using a specific keyword like "TODO-ISSUE" can be a good way to
           # explicitly choose which comments become issues.
-          IDENTIFIERS:  ["TODO"]
+          IDENTIFIERS: |
+            TODO
 
           # Template for the issue body.
           # The content of the TODO comment will be added automatically after this template.
