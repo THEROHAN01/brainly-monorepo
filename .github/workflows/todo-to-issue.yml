@@ -23,14 +23,14 @@ jobs:
 
       # 2. Run the TODO to Issue action
       - name: Create Issues from TODOs
-        uses: alstr/todo-to-issue-action@v5
+        uses: alstr/todo-to-issue-action@v5.1.13
         with:
           # A token with permissions to create issues.
           # The default GITHUB_TOKEN is perfect for this.
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # The keywords to look for in your code comments.
-          IDENTIFIERS: 'TODO,FIXME'
+          IDENTIFIERS: '[{"name": "TODO"}, {"name": "FIXME"}]'
 
           # Prevent the action from scanning its own configuration file.
           IGNORE: '.github/workflows/*'
