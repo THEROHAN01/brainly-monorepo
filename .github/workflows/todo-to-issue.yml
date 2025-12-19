@@ -30,7 +30,8 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # The keywords to look for in your code comments.
-          IDENTIFIERS: '[{"name": "TODO"}, {"name": "FIXME"}]'
+          IDENTIFIERS: |
+            [{"name": "TODO"}, {"name": "FIXME"}]
 
           # Prevent the action from scanning its own configuration file.
           IGNORE: '.github/workflows/*'
