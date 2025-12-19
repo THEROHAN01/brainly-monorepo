@@ -7,7 +7,11 @@ on:
   push:
     branches:
       - main
-
+      
+permissions:
+  issues: write
+  contents: read
+  
 jobs:
   build:
     runs-on: ubuntu-latest # Use the latest available runner
@@ -26,10 +30,10 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # The keywords to look for in your code comments.
-          IDENTIFIERS: 'TODO,FIXME'
-
-          # Prevent the action from scanning its own configuration file.
-          IGNORE: '.github/workflows/*'
+          # You can customize this. For example: ["TODO", "FIXME", "REFACTOR"]
+          # Using a specific keyword like "TODO-ISSUE" can be a good way to
+          # explicitly choose which comments become issues.
+          IDENTIFIERS: '["TODO", "FIXME"]'
 
           # Template for the issue body.
           # The content of the TODO comment will be added automatically after this template.
