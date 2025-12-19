@@ -54,8 +54,7 @@ import { UserModel, ContentModel, connectDB } from './db';
 import { userMiddleware } from './middleware';
 
 const JWT_PASSWORD = "Rohan" ;
-
-// TODO: Hard-coded JWT secret and missing token expiry.
+// TODO: Hard-coded JWT secret and missing token expiry get it under env.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
 // Line Number(s): 49-57
 // Issue Description: `JWT_PASSWORD` is hard-coded in source and tokens are signed without an expiry. This is insecure
