@@ -33,11 +33,19 @@ jobs:
           IGNORE: '.github/workflows/*'
 
           # Template for the issue body.
-          # The content of the TODO comment will be added automatically after this template.
-          # Placeholders like {{ FILE }} and {{ LINE }} are available.
           ISSUE_TEMPLATE: |
             *This issue was automatically generated from a comment in your codebase.*
+
+            **Location:** {{ url }}
             
-            - **File:** `{{ FILE }}`
-            - **Line:** `{{ LINE }}`
             ---
+            
+            **Full Comment:**
+            ```
+            {{ body }}
+            ```
+
+            ---
+
+            **Code Snippet:**
+            {{ snippet }}

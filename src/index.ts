@@ -54,7 +54,7 @@ import { UserModel, ContentModel, connectDB } from './db';
 import { userMiddleware } from './middleware';
 
 const JWT_PASSWORD = "Rohan" ;
-// TODO: Hard-coded JWT secret and missing token expiry get it under env.
+// TODO @THEROHAN01 !security !bug: Hard-coded JWT secret and missing token expiry get it under env.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
 // Line Number(s): 49-57
 // Issue Description: `JWT_PASSWORD` is hard-coded in source and tokens are signed without an expiry. This is insecure
@@ -63,7 +63,7 @@ const JWT_PASSWORD = "Rohan" ;
 const app = express();
 app.use(express.json());
 
-// TODO: Missing CORS configuration.
+// TODO @THEROHAN01 !security !enhancement: Missing CORS configuration.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
 // Line Number(s): 58-60
 // Issue Description: CORS is not configured. If the frontend is served from a different origin, browser requests will be blocked.
@@ -74,7 +74,7 @@ connectDB();
 const PORT = process.env.PORT || 3000;
 
 app.post("/api/v1/signup", async (req: Request, res: Response) => {
-    // TODO: Missing input validation and inconsistent response shapes for signup.
+    // TODO @THEROHAN01 !bug !refactor: Missing input validation and inconsistent response shapes for signup.
     // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
     // Line Number(s): 64-86
     // Issue Description: Signup performs only presence checks and returns informal messages. There is no validation
@@ -114,7 +114,7 @@ app.post("/api/v1/signin",async (req,res) => {
     const isMatch = await bcrypt.compare(password, existingUser.password);
 
     if (isMatch){
-        // TODO: Sign tokens with environment secret and expiry.
+        // TODO @THEROHAN01 !security !bug: Sign tokens with environment secret and expiry.
         // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
         // Line Number(s): 96-101
         // Issue Description: Token is signed using a hard-coded secret and without expiry.
@@ -139,7 +139,7 @@ app.post("/api/v1/content",userMiddleware, (req,res) => {
     const title = req.body.title;
     const link = req.body.link ;
     const type = req.body.type ;
-    // TODO: `POST /api/v1/content` should validate input and await DB write.
+    // TODO @THEROHAN01 !bug !refactor: `POST /api/v1/content` should validate input and await DB write.
     // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
     // Line Number(s): 114-130
     // Issue Description: The route does not validate `title`, `link`, `type` and calls `ContentModel.create` without awaiting it,
@@ -202,7 +202,7 @@ app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
 });
 
 /*
-** TODO **
+// TODO @THEROHAN01 !feature !enhancement: Implement brain sharing functionality
 File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
 Line Number(s): 173-179
 Issue Description: `POST /api/v1/brain/share` and `GET /api/v1/brain/:shareLink` are not implemented (return 501). There is no model or contract for sharing brains.

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 const JWT_PASSWORD = "Rohan" ;
 
-// TODO: Unsafe JWT verification and header handling.
+// TODO @THEROHAN01 !security !bug: Unsafe JWT verification and header handling.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\middleware.ts
 // Line Number(s): 2-15
 // Issue Description: The code calls `jwt.verify(header as string, JWT_PASSWORD)` without checking for a missing/invalid

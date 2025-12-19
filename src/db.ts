@@ -32,7 +32,7 @@
 // }
 // run().catch(console.dir);
 
-// TODO: Remove or archive dead/commented raw MongoDB driver code.
+// TODO @THEROHAN01 !refactor !tech-debt: Remove or archive dead/commented raw MongoDB driver code.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\db.ts
 // Line Number(s): 1-33
 // Issue Description: The file contains a large commented section using the raw `mongodb` driver while the project
@@ -60,7 +60,7 @@ export const UserModel = mongoose.model("User", UserSchema);
 const ContentSchema = new Schema ({
     title : String,
     link  : String,
-    // TODO: `tags` references a missing `Tag` model.
+    // TODO @THEROHAN01 !bug !enhancement: `tags` references a missing `Tag` model.
     // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\db.ts
     // Line Number(s): 52-56
     // Issue Description: `tags` is defined as `[{ type: ObjectId, ref: 'Tag' }]` but there is no `Tag` model in this file.
@@ -88,7 +88,7 @@ export const connectDB = async () => {
 
   }catch(error){
     console.error("Mongodb ka connection fail hogaya:", error);
-    // TODO: Avoid abrupt process exit on DB connect failure.
+    // TODO @THEROHAN01 !bug !refactor: Avoid abrupt process exit on DB connect failure.
     // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\db.ts
     // Line Number(s): 66-80
     // Issue Description: `connectDB` logs the error and calls `process.exit(1)`, which immediately terminates the process.
