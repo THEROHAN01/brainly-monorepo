@@ -50,8 +50,9 @@ import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { UserModel, ContentModel, connectDB } from './db';
+import { UserModel, ContentModel, connectDB, LinkModel } from './db';
 import { userMiddleware } from './middleware';
+import { random } from './utils';
 
 const JWT_PASSWORD = "Rohan" ;
 // TODO @THEROHAN01 !security !bug: Hard-coded JWT secret and missing token expiry get it under env.
@@ -201,19 +202,80 @@ app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
     
 });
 
-/*
-// TODO @THEROHAN01 !feature !enhancement: Implement brain sharing functionality
-File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
-Line Number(s): 173-179
-Issue Description: `POST /api/v1/brain/share` and `GET /api/v1/brain/:shareLink` are not implemented (return 501). There is no model or contract for sharing brains.
-Suggested Fix: Define a `Share` model (ownerId, contentIds, shareLink, createdAt). Implement create and fetch handlers that persist and retrieve shared brains. If not implementing now, add clear TODOs and documentation of expected payloads.
-*/
-app.post("/api/v1/brain/share", (req,res) => {
-res.status(501).json({ message: "Not Implemented" });
+
+app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
+
+    const share = req.body.share ;
+    if(share){
+        const existinglink  = await LinkModel.findOne({
+            //@ts-ignore
+            userId: req.userId
+        });
+        if(existinglink){
+            res.json ({
+                hash: existinglink.hash
+            })
+            return;
+        }
+        const hash = random(10)
+        await LinkModel.create({
+            //@ts-ignore
+            userId: req.userId,
+            hash: hash
+        })
+
+        res.json ({
+            message : "/share/" + hash 
+        });
+        return;
+
+    }else{
+        await LinkModel.deleteOne({
+            //@ts-ignore
+            userId: req.userId 
+        });
+        res.json({
+            message : "removed link"
+        });
+        return;
+    }
+
+
 });
 
-app.get("/api/v1/brain/:shareLink", (req,res) =>{
-    res.status(501).json({ message: "Not Implemented" });
+app.get("/api/v1/brain/:shareLink", async (req,res) =>{
+
+    const hash = req.params.shareLink;
+
+    const link = await LinkModel.findOne({
+        hash
+    });
+
+    if (!link){
+        res.status(411).json({
+            message: "incorrect input"
+        })
+        return ;
+    }
+
+    const content  = await ContentModel.find({
+        userId: link.userId
+    })
+    const user  = await UserModel.findById(link.userId);
+
+    if(!user){
+        res.status(411).json({
+            message: " user not found , error should ideally not happen"
+        })
+        return;
+
+    }
+    res.json ({
+        //@ts-ignore
+        username: user.username,
+        content : content
+    })
+
 });
 
 
