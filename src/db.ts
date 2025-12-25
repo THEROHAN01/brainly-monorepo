@@ -16,6 +16,7 @@ export const UserModel = mongoose.model("User", UserSchema);
 const ContentSchema = new Schema ({
     title : String,
     link  : String,
+    type  : String,
     // TODO @THEROHAN01 !bug !enhancement: `tags` references a missing `Tag` model.
     // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\db.ts
     // Line Number(s): 52-56

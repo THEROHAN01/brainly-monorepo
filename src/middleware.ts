@@ -13,20 +13,29 @@ const JWT_PASSWORD = "Rohan" ;
 // Also add a typed `req.userId?: string` to Express Request (via `declare global`) to avoid `@ts-ignore`.
 
 // this midleware takes the token from the authorisation header and authenticates the user usinng the jwt secret 
-export const userMiddleware = (req:Request , res:Response , next:NextFunction) => {
-    const header = req.headers["authorization"];
+export const userMiddleware = (req:Request, res:Response, next:NextFunction) => {
+    const authHeader = req.headers["authorization"];
 
-    const decoded  = jwt.verify(header as string , JWT_PASSWORD);
-    if(decoded){
-        //@ts-ignore
-        req.userId = decoded.id;
-        next()
-
-    }else{
-        res.status(403).json({
-            message: "bro tu logged in nahi hai (ye middleware bol raha hu mai)"
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+            message: "Authorization header missing or in incorrect format"
         });
     }
 
+    const token = authHeader.split(' ')[1];
 
+    try {
+        const decoded = jwt.verify(token, JWT_PASSWORD);
+        if (decoded && typeof decoded === 'object' && 'id' in decoded) {
+            //@ts-ignore
+            req.userId = decoded.id;
+            next();
+        } else {
+            throw new Error("Invalid token payload");
+        }
+    } catch (error) {
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        });
+    }
 }

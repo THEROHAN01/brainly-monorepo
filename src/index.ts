@@ -47,6 +47,7 @@
 
 
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -62,6 +63,7 @@ const JWT_PASSWORD = "Rohan" ;
 // and prevents secret rotation or token invalidation.
 // Suggested Fix: Move the secret to environment as `JWT_SECRET` and use `jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })`.
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // TODO @THEROHAN01 !security !enhancement: Missing CORS configuration.
@@ -225,7 +227,7 @@ app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
         })
 
         res.json ({
-            message : "/share/" + hash 
+            hash: hash
         });
         return;
 
