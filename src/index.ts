@@ -134,14 +134,11 @@ app.post("/api/v1/signin",async (req,res) => {
     const isMatch = await bcrypt.compare(password, existingUser.password);
 
     if (isMatch){
-        // TODO @THEROHAN01 !security !bug: Sign tokens with environment secret and expiry.
-        // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
-        // Line Number(s): 96-101
-        // Issue Description: Token is signed using a hard-coded secret and without expiry.
-        // Suggested Fix: Read `JWT_SECRET` and `JWT_EXPIRES_IN` from env and sign with `jwt.sign({ id }, JWT_SECRET, { expiresIn })`.
-        const token  = jwt.sign({
-            id: existingUser._id
-        }, JWT_SECRET);
+        const token = jwt.sign(
+            { id: existingUser._id },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
 
         res.json({
             token
@@ -200,7 +197,11 @@ app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
         }
 
         // Generate JWT token
-        const token = jwt.sign({ id: user._id }, JWT_SECRET);
+        const token = jwt.sign(
+            { id: user._id },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
 
         res.json({ token });
     } catch (error: any) {
@@ -209,30 +210,35 @@ app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
     }
 });
 
-app.post("/api/v1/content",userMiddleware, (req,res) => {
-    const title = req.body.title;
-    const link = req.body.link ;
-    const type = req.body.type ;
-    // TODO @THEROHAN01 !bug !refactor: `POST /api/v1/content` should validate input and await DB write.
-    // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
-    // Line Number(s): 114-130
-    // Issue Description: The route does not validate `title`, `link`, `type` and calls `ContentModel.create` without awaiting it,
-    // so it returns success even if the DB write fails.
-    // Suggested Fix: Make the handler `async`, validate request body, `await ContentModel.create(...)` inside a try/catch,
-    // return `201` with the created document on success, and return `400`/`500` on validation/DB errors respectively.
-    ContentModel.create({
-        title,
-        link,
-        type,
-        //@ts-ignore
-        userId: req.userId,
-        tags: []
-    })
+app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
+    const { title, link, type } = req.body;
 
-    return res.json({
-        message: "Content add kardiya maine tera!!!"
-    })
+    // Input validation
+    if (!title || !link || !type) {
+        return res.status(400).json({ message: "Title, link, and type are required" });
+    }
 
+    if (!['twitter', 'youtube'].includes(type)) {
+        return res.status(400).json({ message: "Type must be 'twitter' or 'youtube'" });
+    }
+
+    try {
+        const content = await ContentModel.create({
+            title,
+            link,
+            type,
+            //@ts-ignore
+            userId: req.userId,
+            tags: []
+        });
+
+        return res.status(201).json({
+            message: "Content created successfully",
+            content
+        });
+    } catch (error: any) {
+        return res.status(500).json({ message: "Failed to create content" });
+    }
 });
 
 
