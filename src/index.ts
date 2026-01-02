@@ -51,11 +51,14 @@ import cors from 'cors';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import { UserModel, ContentModel, connectDB, LinkModel } from './db';
 import { userMiddleware } from './middleware';
 import { random } from './utils';
 
-const JWT_PASSWORD = "Rohan" ;
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 // TODO @THEROHAN01 !security !bug: Hard-coded JWT secret and missing token expiry get it under env.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
 // Line Number(s): 49-57
@@ -63,7 +66,15 @@ const JWT_PASSWORD = "Rohan" ;
 // and prevents secret rotation or token invalidation.
 // Suggested Fix: Move the secret to environment as `JWT_SECRET` and use `jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })`.
 const app = express();
-app.use(cors());
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // TODO @THEROHAN01 !security !enhancement: Missing CORS configuration.
@@ -74,7 +85,7 @@ app.use(express.json());
 
 connectDB();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.post("/api/v1/signup", async (req: Request, res: Response) => {
     // TODO @THEROHAN01 !bug !refactor: Missing input validation and inconsistent response shapes for signup.
@@ -114,6 +125,12 @@ app.post("/api/v1/signin",async (req,res) => {
     if (!existingUser){
         return res.status(400).json({message: "tera user he nahi bana hai bro "})
     }
+
+    // Check if user has a password (Google OAuth users don't have passwords)
+    if (!existingUser.password) {
+        return res.status(400).json({message: "This account uses Google sign-in. Please use Google to log in."})
+    }
+
     const isMatch = await bcrypt.compare(password, existingUser.password);
 
     if (isMatch){
@@ -124,7 +141,7 @@ app.post("/api/v1/signin",async (req,res) => {
         // Suggested Fix: Read `JWT_SECRET` and `JWT_EXPIRES_IN` from env and sign with `jwt.sign({ id }, JWT_SECRET, { expiresIn })`.
         const token  = jwt.sign({
             id: existingUser._id
-        }, JWT_PASSWORD);
+        }, JWT_SECRET);
 
         res.json({
             token
@@ -133,9 +150,63 @@ app.post("/api/v1/signin",async (req,res) => {
     }else {
         res.status(403).json({
             message: " Incorrect Credentials "
-        });        
+        });
     }
 
+});
+
+// Google OAuth endpoint
+app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
+    const { credential } = req.body;
+
+    if (!credential) {
+        return res.status(400).json({ message: "Google credential is required" });
+    }
+
+    try {
+        // Verify the Google token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload) {
+            return res.status(401).json({ message: "Invalid Google token" });
+        }
+
+        const { sub: googleId, email, name, picture } = payload;
+
+        // Find existing user by googleId or email
+        let user = await UserModel.findOne({
+            $or: [{ googleId }, { email }]
+        });
+
+        if (!user) {
+            // Create new user
+            user = await UserModel.create({
+                googleId,
+                email,
+                username: email?.split('@')[0] || `user_${googleId?.slice(0, 8)}`,
+                profilePicture: picture,
+                authProvider: 'google'
+            });
+        } else if (!user.googleId) {
+            // Link Google account to existing user (found by email)
+            user.googleId = googleId;
+            user.profilePicture = picture;
+            user.authProvider = 'google';
+            await user.save();
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ id: user._id }, JWT_SECRET);
+
+        res.json({ token });
+    } catch (error: any) {
+        console.error("Google auth error:", error);
+        res.status(401).json({ message: "Google authentication failed" });
+    }
 });
 
 app.post("/api/v1/content",userMiddleware, (req,res) => {
@@ -280,6 +351,31 @@ app.get("/api/v1/brain/:shareLink", async (req,res) =>{
 
 });
 
+// Get current user profile
+app.get("/api/v1/me", userMiddleware, async (req: Request, res: Response) => {
+    try {
+        //@ts-ignore
+        const userId = req.userId;
+
+        const user = await UserModel.findById(userId).select('-password -googleId');
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profilePicture: user.profilePicture,
+                authProvider: user.authProvider
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: "Error fetching user profile" });
+    }
+});
 
 
 app.listen(PORT , () => {

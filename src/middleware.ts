@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-const JWT_PASSWORD = "Rohan" ;
+import 'dotenv/config';
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 // TODO @THEROHAN01 !security !bug: Unsafe JWT verification and header handling.
 // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\middleware.ts
@@ -25,7 +27,7 @@ export const userMiddleware = (req:Request, res:Response, next:NextFunction) => 
     const token = authHeader.split(' ')[1];
 
     try {
-        const decoded = jwt.verify(token, JWT_PASSWORD);
+        const decoded = jwt.verify(token, JWT_SECRET);
         if (decoded && typeof decoded === 'object' && 'id' in decoded) {
             //@ts-ignore
             req.userId = decoded.id;

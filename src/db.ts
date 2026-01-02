@@ -3,10 +3,15 @@ import mongoose, { Schema } from "mongoose";
 import 'dotenv/config'
 
 
-//userModel 
+//userModel
 const UserSchema = new Schema({
-  username: { type: String, unique: true },
-  password: { type: String, required: true },
+  username: { type: String, unique: true, sparse: true },
+  email: { type: String, unique: true, sparse: true },
+  password: { type: String },
+  googleId: { type: String, unique: true, sparse: true },
+  profilePicture: { type: String },
+  authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+  createdAt: { type: Date, default: Date.now }
 });
 
 export const UserModel = mongoose.model("User", UserSchema);
