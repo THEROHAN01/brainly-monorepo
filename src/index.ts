@@ -52,7 +52,7 @@ import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
-import { UserModel, ContentModel, connectDB, LinkModel } from './db';
+import { UserModel, ContentModel, connectDB, LinkModel, TagModel } from './db';
 import { userMiddleware } from './middleware';
 import { random } from './utils';
 
@@ -209,7 +209,7 @@ app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
 });
 
 app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
-    const { title, link, type } = req.body;
+    const { title, link, type, tags } = req.body;
 
     // Input validation
     if (!title || !link || !type) {
@@ -221,13 +221,25 @@ app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) 
     }
 
     try {
+        //@ts-ignore
+        const userId = req.userId;
+
+        // Validate tags if provided
+        let validTagIds: mongoose.Types.ObjectId[] = [];
+        if (tags && Array.isArray(tags) && tags.length > 0) {
+            const userTags = await TagModel.find({
+                _id: { $in: tags },
+                userId
+            });
+            validTagIds = userTags.map(t => t._id);
+        }
+
         const content = await ContentModel.create({
             title,
             link,
             type,
-            //@ts-ignore
-            userId: req.userId,
-            tags: []
+            userId,
+            tags: validTagIds
         });
 
         return res.status(201).json({
@@ -246,12 +258,13 @@ app.get("/api/v1/content" ,userMiddleware, async (req,res) =>{
     const userId = req.userId;
     const content = await ContentModel.find({
         userId: userId
-    }).populate("userId","username");
+    })
+    .populate("userId", "username")
+    .populate("tags", "name");
+
     res.json({
         content
     });
-
-
 });
 
 app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
@@ -279,6 +292,128 @@ app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
     
 });
 
+// ========== TAG ENDPOINTS ==========
+
+// Get all tags for the authenticated user
+app.get("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => {
+    try {
+        //@ts-ignore
+        const userId = req.userId;
+        const tags = await TagModel.find({ userId }).sort({ name: 1 });
+        res.json({ tags });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to fetch tags" });
+    }
+});
+
+// Create a new tag
+app.post("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => {
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string') {
+        return res.status(400).json({ message: "Tag name is required" });
+    }
+
+    const trimmedName = name.trim().toLowerCase();
+    if (trimmedName.length === 0 || trimmedName.length > 50) {
+        return res.status(400).json({ message: "Tag name must be 1-50 characters" });
+    }
+
+    try {
+        //@ts-ignore
+        const userId = req.userId;
+
+        // Check if tag already exists for this user
+        const existingTag = await TagModel.findOne({
+            name: trimmedName,
+            userId
+        });
+
+        if (existingTag) {
+            return res.status(409).json({
+                message: "Tag already exists",
+                tag: existingTag
+            });
+        }
+
+        const tag = await TagModel.create({
+            name: trimmedName,
+            userId
+        });
+
+        res.status(201).json({ message: "Tag created successfully", tag });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to create tag" });
+    }
+});
+
+// Delete a tag (also removes it from all content)
+app.delete("/api/v1/tags/:tagId", userMiddleware, async (req: Request, res: Response) => {
+    const { tagId } = req.params;
+
+    try {
+        //@ts-ignore
+        const userId = req.userId;
+
+        // Delete the tag
+        const result = await TagModel.findOneAndDelete({
+            _id: tagId,
+            userId
+        });
+
+        if (!result) {
+            return res.status(404).json({ message: "Tag not found" });
+        }
+
+        // Remove this tag from all content that references it
+        await ContentModel.updateMany(
+            { userId },
+            { $pull: { tags: tagId } }
+        );
+
+        res.json({ message: "Tag deleted successfully" });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to delete tag" });
+    }
+});
+
+// Update tags on existing content
+app.put("/api/v1/content/:contentId/tags", userMiddleware, async (req: Request, res: Response) => {
+    const { contentId } = req.params;
+    const { tags } = req.body;
+
+    if (!Array.isArray(tags)) {
+        return res.status(400).json({ message: "Tags must be an array" });
+    }
+
+    try {
+        //@ts-ignore
+        const userId = req.userId;
+
+        // Verify content belongs to user
+        const content = await ContentModel.findOne({ _id: contentId, userId });
+        if (!content) {
+            return res.status(404).json({ message: "Content not found" });
+        }
+
+        // Verify all tags belong to this user
+        let validTagIds: mongoose.Types.ObjectId[] = [];
+        if (tags.length > 0) {
+            const userTags = await TagModel.find({
+                _id: { $in: tags },
+                userId
+            });
+            validTagIds = userTags.map(t => t._id);
+        }
+
+        (content.tags as any) = validTagIds;
+        await content.save();
+
+        res.json({ message: "Tags updated successfully", content });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to update tags" });
+    }
+});
 
 app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
 

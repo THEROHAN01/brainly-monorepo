@@ -16,17 +16,21 @@ const UserSchema = new Schema({
 
 export const UserModel = mongoose.model("User", UserSchema);
 
+// TagModel
+const TagSchema = new Schema({
+  name: { type: String, required: true },
+  userId: { type: mongoose.Types.ObjectId, ref: 'User', required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+TagSchema.index({ name: 1, userId: 1 }, { unique: true });
+export const TagModel = mongoose.model("Tag", TagSchema);
+
 //ContentModel
 
 const ContentSchema = new Schema ({
     title : String,
     link  : String,
     type  : String,
-    // TODO @THEROHAN01 !bug !enhancement: `tags` references a missing `Tag` model.
-    // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\db.ts
-    // Line Number(s): 52-56
-    // Issue Description: `tags` is defined as `[{ type: ObjectId, ref: 'Tag' }]` but there is no `Tag` model in this file.
-    // Suggested Fix: Add a `Tag` schema and export `TagModel` (recommended) or change `tags` to `tags: [String]` if tags are simple labels.
     tags : [{type: mongoose.Types.ObjectId, ref:'Tag'}],
     userId: {type:mongoose.Types.ObjectId, ref:"User", required: true}
 
