@@ -49,26 +49,18 @@ export const LinkModel = mongoose.model("Link", LinkSchema);
 
 
 
-// Database connention //
+// Database connection
 
 export const connectDB = async () => {
   const MONGO_URI = process.env.MONGO_URI;
-  if (!MONGO_URI){
-    throw new Error(".env me uri nahi dala kya ?");
+  if (!MONGO_URI) {
+    throw new Error("MONGO_URI environment variable is not set");
   }
   try {
     await mongoose.connect(MONGO_URI);
-    console.log("Mongodb connect ho gaya bhai");
-
-  }catch(error){
-    console.error("Mongodb ka connection fail hogaya:", error);
-    // TODO @THEROHAN01 !bug !refactor: Avoid abrupt process exit on DB connect failure.
-    // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\db.ts
-    // Line Number(s): 66-80
-    // Issue Description: `connectDB` logs the error and calls `process.exit(1)`, which immediately terminates the process.
-    // Suggested Fix: Consider rethrowing the error to let the caller decide how to handle it, or implement retry/backoff logic
-    // for improved resilience during development and testing. Example: remove `process.exit(1)` and `throw error` instead.
-    process.exit(1);
-
+    console.log("MongoDB connected successfully");
+  } catch (error) {
+    console.error("MongoDB connection failed:", error);
+    throw error;
   }
 };

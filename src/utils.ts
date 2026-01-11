@@ -1,11 +1,13 @@
-export function random(len:number){
+import crypto from 'crypto';
 
-    let options = "qwertyuiopasdfghjklzxcvbnm1234567890";
-    let length = options.length;
-    let ans = "";
+export function random(len: number): string {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const randomBytes = crypto.randomBytes(len);
+    let result = "";
 
-    for ( let i = 0 ; i < len ; i++ ){
-        ans += options[Math.floor((Math.random() * length))] // options of a random number between 0 => 20 (length)
+    for (let i = 0; i < len; i++) {
+        result += chars[randomBytes[i] % chars.length];
     }
-    return ans ;
+
+    return result;
 }

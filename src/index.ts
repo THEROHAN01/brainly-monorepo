@@ -1,68 +1,41 @@
-// import express from 'express';
-// const app = express();
-// import bcrypt from "bcrypt";
-// import mongoose from 'mongoose';
-// import jwt from 'jsonwebtoken';
-// import { UserModel , connectDB} from './db';
-// app.use(express.json());
-
-// //connect the database 
-// connectDB();
-
-// const PORT =  process.env.PORT || 3000 ;
-
-// app.post("/api/v1/signup", async (req,res) => {
-
-
-//     const username = req.body.username ;
-//     const password = req.body.password ;
-
-//     if (!username || !password){
-//         return res.status(400).json({
-//             message: "Username and password lagta hai bro"
-//         })
-//     }
-
-//     const existingUser = await UserModel.findOne({username});
-//     if (existingUser){return res.status(400).json({message : "user pehele se hai bhai tera "})};
-
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password,salt);
-//     try {
-//         const user = new UserModel({
-//             username: username,
-//             password: hashedPassword
-//         });
-//         await user.save();
-//         res.status(201).json({
-//             message: "user created successfully you have signed up "
-//         });
-//     }catch(error){
-//         res.status(500).json({message: "Error creating user:" , error});
-//         }
-    
-
-   
-// });
-
-
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { UserModel, ContentModel, connectDB, LinkModel, TagModel } from './db';
 import { userMiddleware } from './middleware';
 import { random } from './utils';
+
+// Validation schemas
+const signupSchema = z.object({
+    username: z.string()
+        .min(3, "Username must be at least 3 characters")
+        .max(30, "Username must be at most 30 characters")
+        .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+    password: z.string()
+        .min(6, "Password must be at least 6 characters")
+        .max(100, "Password must be at most 100 characters")
+});
+
+const signinSchema = z.object({
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(1, "Password is required")
+});
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
     console.error("FATAL: JWT_SECRET environment variable is not set");
     process.exit(1);
 }
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+if (!GOOGLE_CLIENT_ID) {
+    console.warn("WARNING: GOOGLE_CLIENT_ID not set - Google OAuth will be disabled");
+}
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 const app = express();
 
 // CORS configuration
@@ -75,53 +48,51 @@ app.use(cors({
 
 app.use(express.json());
 
-// TODO @THEROHAN01 !security !enhancement: Missing CORS configuration.
-// File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
-// Line Number(s): 58-60
-// Issue Description: CORS is not configured. If the frontend is served from a different origin, browser requests will be blocked.
-// Suggested Fix: Install `cors` and add `app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));` early in the middleware stack.
-
 connectDB();
 
 const PORT = process.env.PORT || 5000;
 
 app.post("/api/v1/signup", async (req: Request, res: Response) => {
-    // TODO @THEROHAN01 !bug !refactor: Missing input validation and inconsistent response shapes for signup.
-    // File Path: e:\\100xdev\\week-15\\week_15.1_Building2ndbrain\\Brainly\\src\\index.ts
-    // Line Number(s): 64-86
-    // Issue Description: Signup performs only presence checks and returns informal messages. There is no validation
-    // for username/password strength or standardized error response shape.
-    // Suggested Fix: Add request validation (e.g., `zod` or `express-validator`) to enforce username/password rules
-    // and standardize responses (e.g., `{ message, data? }` or `{ error: { code, message } }`).
-  const { username, password } = req.body;
+    // Validate input
+    const result = signupSchema.safeParse(req.body);
+    if (!result.success) {
+        const errors = result.error.issues.map((e: { message: string }) => e.message);
+        return res.status(400).json({ message: errors[0] });
+    }
 
-  if (!username || !password) {
-    return res.status(400).json({ message: "Username and password are required" });
-  }
+    const { username, password } = result.data;
 
-  const existingUser = await UserModel.findOne({ username });
-  if (existingUser) {
-    return res.status(400).json({ message: "Username already exists" });
-  }
+    const existingUser = await UserModel.findOne({ username });
+    if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+    }
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-  try {
-    const user = new UserModel({ username, password: hashedPassword });
-    await user.save();
-    res.status(201).json({ message: "Account created successfully" });
-  } catch (error: any) {
-    res.status(500).json({ message: "Error creating user", error: error.message });
-  }
+    try {
+        const user = new UserModel({ username, password: hashedPassword });
+        await user.save();
+        res.status(201).json({ message: "Account created successfully" });
+    } catch (error: any) {
+        console.error("Signup error:", error);
+        res.status(500).json({ message: "Failed to create account" });
+    }
 });
 
-app.post("/api/v1/signin",async (req,res) => {
-    const {username , password } = req.body;
-    // const salt = await bcrypt.genSalt(10);
-    const existingUser = await UserModel.findOne({username});
-    if (!existingUser){
-        return res.status(400).json({message: "User not found"})
+app.post("/api/v1/signin", async (req: Request, res: Response) => {
+    // Validate input
+    const result = signinSchema.safeParse(req.body);
+    if (!result.success) {
+        const errors = result.error.issues.map((e: { message: string }) => e.message);
+        return res.status(400).json({ message: errors[0] });
+    }
+
+    const { username, password } = result.data;
+
+    const existingUser = await UserModel.findOne({ username });
+    if (!existingUser) {
+        return res.status(400).json({ message: "Invalid credentials" });
     }
 
     // Check if user has a password (Google OAuth users don't have passwords)
@@ -152,6 +123,10 @@ app.post("/api/v1/signin",async (req,res) => {
 
 // Google OAuth endpoint
 app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
+    if (!googleClient || !GOOGLE_CLIENT_ID) {
+        return res.status(503).json({ message: "Google authentication is not configured" });
+    }
+
     const { credential } = req.body;
 
     if (!credential) {
@@ -221,7 +196,6 @@ app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) 
     }
 
     try {
-        //@ts-ignore
         const userId = req.userId;
 
         // Validate tags if provided
@@ -254,7 +228,6 @@ app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) 
 
 app.get("/api/v1/content" ,userMiddleware, async (req,res) =>{
 
-    //@ts-ignore
     const userId = req.userId;
     const content = await ContentModel.find({
         userId: userId
@@ -276,8 +249,7 @@ app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
     try {
         const result = await ContentModel.findOneAndDelete({
             _id: contentId,
-            //@ts-ignore
-            userId: req.userId 
+            userId: req.userId
         });
         if(!result){
             return res.status(404).json({message: "Content not found"});
@@ -297,7 +269,6 @@ app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
 // Get all tags for the authenticated user
 app.get("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => {
     try {
-        //@ts-ignore
         const userId = req.userId;
         const tags = await TagModel.find({ userId }).sort({ name: 1 });
         res.json({ tags });
@@ -320,7 +291,6 @@ app.post("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => 
     }
 
     try {
-        //@ts-ignore
         const userId = req.userId;
 
         // Check if tag already exists for this user
@@ -352,7 +322,6 @@ app.delete("/api/v1/tags/:tagId", userMiddleware, async (req: Request, res: Resp
     const { tagId } = req.params;
 
     try {
-        //@ts-ignore
         const userId = req.userId;
 
         // Delete the tag
@@ -387,7 +356,6 @@ app.put("/api/v1/content/:contentId/tags", userMiddleware, async (req: Request, 
     }
 
     try {
-        //@ts-ignore
         const userId = req.userId;
 
         // Verify content belongs to user
@@ -420,7 +388,6 @@ app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
     const share = req.body.share ;
     if(share){
         const existinglink  = await LinkModel.findOne({
-            //@ts-ignore
             userId: req.userId
         });
         if(existinglink){
@@ -431,7 +398,6 @@ app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
         }
         const hash = random(10)
         await LinkModel.create({
-            //@ts-ignore
             userId: req.userId,
             hash: hash
         })
@@ -443,8 +409,7 @@ app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
 
     }else{
         await LinkModel.deleteOne({
-            //@ts-ignore
-            userId: req.userId 
+            userId: req.userId
         });
         res.json({
             message : "removed link"
@@ -483,7 +448,6 @@ app.get("/api/v1/brain/:shareLink", async (req,res) =>{
 
     }
     res.json ({
-        //@ts-ignore
         username: user.username,
         content : content
     })
@@ -493,7 +457,6 @@ app.get("/api/v1/brain/:shareLink", async (req,res) =>{
 // Get current user profile
 app.get("/api/v1/me", userMiddleware, async (req: Request, res: Response) => {
     try {
-        //@ts-ignore
         const userId = req.userId;
 
         const user = await UserModel.findById(userId).select('-password -googleId');
