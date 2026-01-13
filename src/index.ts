@@ -8,6 +8,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { UserModel, ContentModel, connectDB, LinkModel, TagModel } from './db';
 import { userMiddleware } from './middleware';
 import { random } from './utils';
+import { parseUrl, getProvider, getProviderInfo } from './providers';
 
 // Validation schemas
 const signupSchema = z.object({
@@ -183,22 +184,47 @@ app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * Create new content
+ *
+ * This endpoint accepts any valid URL and auto-detects the content type.
+ * Supported types: YouTube, Twitter, and generic links (any other URL).
+ *
+ * The URL is parsed to extract:
+ * - type: Provider type (youtube, twitter, link)
+ * - contentId: Unique identifier (video ID, tweet ID, or URL hash)
+ *
+ * @body {string} title - User-provided title for the content
+ * @body {string} link - URL to save (any valid HTTP/HTTPS URL)
+ * @body {string[]} [tags] - Optional array of tag IDs
+ */
 app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
-    const { title, link, type, tags } = req.body;
+    const { title, link, tags } = req.body;
 
-    // Input validation
-    if (!title || !link || !type) {
-        return res.status(400).json({ message: "Title, link, and type are required" });
+    // Validate required fields
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+        return res.status(400).json({ message: "Title is required" });
     }
 
-    if (!['twitter', 'youtube'].includes(type)) {
-        return res.status(400).json({ message: "Type must be 'twitter' or 'youtube'" });
+    if (!link || typeof link !== 'string') {
+        return res.status(400).json({ message: "Link is required" });
+    }
+
+    // Validate title length
+    if (title.length > 500) {
+        return res.status(400).json({ message: "Title must be 500 characters or less" });
+    }
+
+    // Parse and validate URL using provider system
+    const parsed = parseUrl(link);
+    if (!parsed) {
+        return res.status(400).json({ message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL." });
     }
 
     try {
         const userId = req.userId;
 
-        // Validate tags if provided
+        // Validate tags if provided (ensure they belong to this user)
         let validTagIds: mongoose.Types.ObjectId[] = [];
         if (tags && Array.isArray(tags) && tags.length > 0) {
             const userTags = await TagModel.find({
@@ -208,21 +234,84 @@ app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) 
             validTagIds = userTags.map(t => t._id);
         }
 
+        // Create content with auto-detected type and extracted content ID
         const content = await ContentModel.create({
-            title,
-            link,
-            type,
+            title: title.trim(),
+            link: parsed.originalUrl,      // Store original URL
+            contentId: parsed.contentId,   // Store extracted ID
+            type: parsed.type,             // Auto-detected type
             userId,
             tags: validTagIds
         });
 
         return res.status(201).json({
             message: "Content created successfully",
-            content
+            content: {
+                ...content.toObject(),
+                // Include additional parsed info in response
+                displayName: parsed.displayName,
+                embedUrl: parsed.embedUrl,
+                canonicalUrl: parsed.canonicalUrl,
+                canEmbed: parsed.canEmbed
+            }
         });
     } catch (error: any) {
+        console.error("Content creation error:", error);
         return res.status(500).json({ message: "Failed to create content" });
     }
+});
+
+/**
+ * Validate URL and get preview information
+ *
+ * This endpoint validates a URL and returns information for previewing
+ * the content before saving. Useful for showing embed previews in the UI.
+ *
+ * @body {string} link - URL to validate
+ */
+app.post("/api/v1/content/validate", userMiddleware, async (req: Request, res: Response) => {
+    const { link } = req.body;
+
+    // Check if link is provided
+    if (!link || typeof link !== 'string') {
+        return res.status(400).json({
+            valid: false,
+            message: "URL is required"
+        });
+    }
+
+    // Parse URL using provider system
+    const parsed = parseUrl(link);
+
+    if (!parsed) {
+        return res.status(400).json({
+            valid: false,
+            message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL."
+        });
+    }
+
+    // Return validation result with preview information
+    return res.json({
+        valid: true,
+        type: parsed.type,
+        displayName: parsed.displayName,
+        contentId: parsed.contentId,
+        embedUrl: parsed.embedUrl,
+        canonicalUrl: parsed.canonicalUrl,
+        canEmbed: parsed.canEmbed,
+        embedType: parsed.embedType
+    });
+});
+
+/**
+ * Get list of supported content providers
+ *
+ * Returns information about all registered content providers.
+ * Useful for displaying supported platforms in the UI.
+ */
+app.get("/api/v1/content/providers", (req: Request, res: Response) => {
+    const providers = getProviderInfo();
+    res.json({ providers });
 });
 
 

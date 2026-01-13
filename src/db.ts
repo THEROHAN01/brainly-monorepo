@@ -28,13 +28,34 @@ export const TagModel = mongoose.model("Tag", TagSchema);
 //ContentModel
 
 const ContentSchema = new Schema ({
-    title : String,
-    link  : String,
-    type  : String,
-    tags : [{type: mongoose.Types.ObjectId, ref:'Tag'}],
-    userId: {type:mongoose.Types.ObjectId, ref:"User", required: true}
+    // Content title provided by user
+    title: { type: String, required: true, maxlength: 500 },
 
-})
+    // Original URL as submitted by user (preserved for reference and generic links)
+    link: { type: String, required: true },
+
+    // Extracted content ID (video ID, tweet ID, or URL hash for generic links)
+    contentId: { type: String, required: true },
+
+    // Provider type: 'youtube', 'twitter', 'link', etc.
+    // Flexible string type allows easy addition of new providers
+    type: { type: String, required: true },
+
+    // User's tags for organization
+    tags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
+
+    // Owner of this content
+    userId: { type: mongoose.Types.ObjectId, ref: "User", required: true },
+
+    // Optional metadata (for future use: OG data, thumbnails, etc.)
+    metadata: { type: Schema.Types.Mixed },
+
+    // Timestamp for sorting and display
+    createdAt: { type: Date, default: Date.now }
+});
+
+// Index for efficient queries by user, sorted by creation date
+ContentSchema.index({ userId: 1, createdAt: -1 });
 
 export const ContentModel = mongoose.model("Content", ContentSchema);
 
