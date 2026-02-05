@@ -1,0 +1,339 @@
+@import "tailwindcss";
+
+/* shadcn/ui compatible CSS variables */
+:root {
+    --background: 0 0% 0%;                    /* brand-bg #000000 */
+    --foreground: 0 0% 93%;                   /* brand-text #EEEEEE */
+    --card: 74 100% 11%;                      /* brand-surface #253900 */
+    --card-foreground: 0 0% 93%;
+    --primary: 118 100% 40%;                  /* brand-primary #08CB00 */
+    --primary-foreground: 0 0% 0%;
+    --secondary: 74 100% 11%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 74 50% 15%;
+    --muted-foreground: 0 0% 53%;             /* brand-text-muted #888888 */
+    --accent: 118 100% 40%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 74 50% 20%;
+    --input: 74 50% 20%;
+    --ring: 118 100% 40%;
+    --radius: 0.5rem;
+}
+
+/* Tailwind v4 Theme Configuration */
+@theme {
+    /* Brand Colors - Semantic naming for easy theme changes */
+    --color-brand-primary: #08CB00;        /* Main accent color */
+    --color-brand-primary-light: #4ADE40;  /* Lighter variant */
+    --color-brand-primary-dark: #059600;   /* Darker variant */
+    --color-brand-surface: #253900;        /* Card/surface backgrounds */
+    --color-brand-surface-dark: #1a2600;   /* Darker surfaces */
+    --color-brand-bg: #000000;             /* Main background */
+    --color-brand-text: #EEEEEE;           /* Primary text */
+    --color-brand-text-muted: #888888;     /* Secondary/muted text */
+
+    /* Custom Animations */
+    --animate-fade-in: fade-in 0.6s ease-out forwards;
+    --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;
+    --animate-slide-up: slide-up 0.8s ease-out forwards;
+    --animate-float: float 6s ease-in-out infinite;
+    --animate-float-delayed: float 6s ease-in-out 2s infinite;
+    --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+    --animate-gradient-shift: gradient-shift 8s ease infinite;
+    --animate-scale-in: scale-in 0.3s ease-out forwards;
+}
+
+/* Keyframes - must be outside @theme */
+@keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+    0% { opacity: 0; transform: translateY(40px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(8, 203, 0, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(8, 203, 0, 0.8); }
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes scale-in {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Gradient text effect - uses CSS variables for theme support */
+.text-gradient {
+    background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-primary-light) 50%, var(--color-brand-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-white {
+    background: linear-gradient(135deg, var(--color-brand-text) 0%, #FFFFFF 50%, var(--color-brand-text) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glow effects - using CSS color-mix for variable support */
+.glow-primary {
+    box-shadow: 0 0 30px color-mix(in srgb, var(--color-brand-primary) 50%, transparent);
+}
+
+.glow-primary-sm {
+    box-shadow: 0 0 15px color-mix(in srgb, var(--color-brand-primary) 40%, transparent);
+}
+
+.glow-primary-lg {
+    box-shadow: 0 0 50px color-mix(in srgb, var(--color-brand-primary) 60%, transparent);
+}
+
+/* Text glow */
+.text-glow {
+    text-shadow: 0 0 20px color-mix(in srgb, var(--color-brand-primary) 50%, transparent);
+}
+
+/* Grid pattern background */
+.bg-grid-pattern {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-brand-primary) 3%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-brand-primary) 3%, transparent) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+.bg-grid-pattern-dense {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-brand-primary) 5%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-brand-primary) 5%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+}
+
+/* Glassmorphism effect */
+.glass {
+    background: color-mix(in srgb, var(--color-brand-bg) 80%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
+}
+
+.glass-light {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Hover card lift effect */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Stagger animation delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+
+/* Shine effect on hover */
+.shine-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.shine-effect::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+    transform: rotate(45deg) translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.shine-effect:hover::after {
+    transform: rotate(45deg) translateX(100%);
+}
+
+/* Gradient border effect */
+.gradient-border {
+    position: relative;
+    background: linear-gradient(135deg, var(--color-brand-bg) 0%, var(--color-brand-surface-dark) 100%);
+}
+
+.gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-surface) 50%, var(--color-brand-primary) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+/* Animated gradient background */
+.bg-gradient-animated {
+    background: linear-gradient(-45deg, var(--color-brand-bg), var(--color-brand-surface-dark), var(--color-brand-surface), var(--color-brand-bg));
+    background-size: 400% 400%;
+    animation: gradient-shift 8s ease infinite;
+}
+
+/* Shimmer animation for badges */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.badge-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-brand-primary) 10%, transparent) 0%,
+        color-mix(in srgb, var(--color-brand-primary) 5%, transparent) 25%,
+        color-mix(in srgb, var(--color-brand-primary) 20%, transparent) 50%,
+        color-mix(in srgb, var(--color-brand-primary) 5%, transparent) 75%,
+        color-mix(in srgb, var(--color-brand-primary) 10%, transparent) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Glowing border animation */
+@keyframes border-glow {
+    0%, 100% {
+        border-color: color-mix(in srgb, var(--color-brand-primary) 30%, transparent);
+        box-shadow: 0 0 5px color-mix(in srgb, var(--color-brand-primary) 20%, transparent);
+    }
+    50% {
+        border-color: color-mix(in srgb, var(--color-brand-primary) 60%, transparent);
+        box-shadow: 0 0 15px color-mix(in srgb, var(--color-brand-primary) 40%, transparent);
+    }
+}
+
+.animate-border-glow {
+    animation: border-glow 2s ease-in-out infinite;
+}
+
+/* Sparkle effect */
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+.animate-sparkle {
+    animation: sparkle 1.5s ease-in-out infinite;
+}
+
+/* Magic UI Animations */
+@keyframes border-beam {
+    0% {
+        offset-distance: 0%;
+    }
+    100% {
+        offset-distance: 100%;
+    }
+}
+
+@keyframes blur-fade-in {
+    0% {
+        opacity: 0;
+        filter: blur(12px);
+    }
+    100% {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+@keyframes text-shimmer {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes particle-float {
+    0%, 100% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100vh) translateX(20px);
+        opacity: 0;
+    }
+}
+
+.animate-blur-fade-in {
+    animation: blur-fade-in 0.5s ease-out forwards;
+}
+
+.animate-text-shimmer {
+    background-size: 200% 100%;
+    animation: text-shimmer 3s ease-in-out infinite;
+}
+
+/* Staggered entrance animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+.stagger-7 { animation-delay: 0.7s; }
+.stagger-8 { animation-delay: 0.8s; }
