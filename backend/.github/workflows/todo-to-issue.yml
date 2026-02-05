@@ -1,0 +1,51 @@
+# .github/workflows/todo-to-issue.yml
+
+name: 'Create Issues from TODOs'
+
+# This workflow runs on every push to the main branch
+on:
+  push:
+    branches:
+      - main
+      
+permissions:
+  issues: write
+  contents: read
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest # Use the latest available runner
+
+    steps:
+      # 1. Check out the repository's code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Run the TODO to Issue action
+      - name: Create Issues from TODOs
+        uses: alstr/todo-to-issue-action@v5.1.13
+        with:
+          # A token with permissions to create issues.
+          # The default GITHUB_TOKEN is perfect for this.
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # Prevent the action from scanning its own configuration file.
+          IGNORE: '.github/workflows/*'
+
+          # Template for the issue body.
+          ISSUE_TEMPLATE: |
+            *This issue was automatically generated from a comment in your codebase.*
+
+            **Location:** {{ url }}
+            
+            ---
+            
+            **Full Comment:**
+            ```
+            {{ body }}
+            ```
+
+            ---
+
+            **Code Snippet:**
+            {{ snippet }}
