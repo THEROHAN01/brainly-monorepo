@@ -1,0 +1,45 @@
+# Node.js dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*  # like .env.production, .env.local etc.
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sw?
+*.sublime*
+
+# Optional: Ignore lock files (if you want to avoid checking them in)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Optional: coverage reports
+coverage/
+
+# Optional: lint/styling cache
+.eslintcache
+.stylelintcache
+
+# Optional: testing
+jest-cache/
+jest-output/
