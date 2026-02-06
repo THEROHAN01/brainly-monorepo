@@ -4,6 +4,7 @@ import { Input } from "./Input";
 import { TagInput } from "./TagInput";
 import { BACKEND_URL } from "../../config";
 import axios from "axios";
+import { toast } from "sonner";
 import type { Tag } from "../../types/tag";
 import {
     Dialog,
@@ -148,7 +149,7 @@ export function CreateContentModal({
         }
 
         if (!validation?.valid) {
-            alert("Please enter a valid URL.");
+            toast.error("Please enter a valid URL.");
             return;
         }
 
@@ -164,14 +165,15 @@ export function CreateContentModal({
                     "Authorization": `Bearer ${token}`
                 }
             });
+            toast.success("Content added successfully!");
             onContentAdded?.();
             onClose();
         } catch (err) {
             // Show specific error message from server if available
             if (axios.isAxiosError(err) && err.response?.data?.message) {
-                alert(err.response.data.message);
+                toast.error(err.response.data.message);
             } else {
-                alert("Failed to add content. Please try again.");
+                toast.error("Failed to add content. Please try again.");
             }
         } finally {
             setLoading(false);
