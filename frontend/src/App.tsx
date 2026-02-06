@@ -5,6 +5,7 @@ import { Landing } from "./pages/Landing";
 import { SharedBrain } from "./pages/SharedBrain";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      <Toaster position="top-right" richColors />
     </>
   )
 }                                                                                       

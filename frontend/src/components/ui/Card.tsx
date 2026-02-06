@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { ShareIcon } from "../../icons/ShareIcon";
 import { TrashIcon } from "../../icons/TrashIcon";
+import { CopyIcon } from "../../icons/CopyIcon";
 import { TagBadge } from "./TagBadge";
 import { getProvider, getEmbedUrl as getProviderEmbedUrl } from "../../providers";
+import { toast } from "sonner";
 import type { Tag } from "../../types/tag";
 
 declare global {
@@ -65,6 +67,15 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
         }
     };
 
+    const handleCopyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(link);
+            toast.success("Link copied to clipboard!");
+        } catch {
+            toast.error("Failed to copy link");
+        }
+    };
+
     return (
         <div className="relative">
             {/* Delete Confirmation Overlay */}
@@ -98,12 +109,20 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
                         </div>
                         <span className="truncate">{title}</span>
                     </div>
-                    <div className="flex flex-shrink-0">
+                    <div className="flex flex-shrink-0 gap-1">
+                        <button
+                            onClick={handleCopyLink}
+                            className="pr-1 text-brand-text hover:text-brand-primary transition-colors"
+                            title="Copy link"
+                        >
+                            <CopyIcon size="md" />
+                        </button>
                         <a
                             href={link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="pr-2 text-brand-text hover:text-brand-primary transition-colors"
+                            className="pr-1 text-brand-text hover:text-brand-primary transition-colors"
+                            title="Open in new tab"
                         >
                             <ShareIcon size="md" />
                         </a>
