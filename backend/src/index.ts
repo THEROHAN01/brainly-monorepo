@@ -179,8 +179,12 @@ app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
 
         res.json({ token });
     } catch (error: any) {
-        console.error("Google auth error:", error);
-        res.status(401).json({ message: "Google authentication failed" });
+        console.error("Google auth error:", error?.message || error);
+        console.error("Google auth full error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        res.status(401).json({
+            message: "Google authentication failed",
+            detail: error?.message || "Unknown error"
+        });
     }
 });
 

@@ -27,9 +27,17 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
             localStorage.setItem('token', response.data.token);
             navigate('/dashboard');
         } catch (error) {
+            console.error('Google sign-in error:', error);
             let errorMessage = 'Google sign-in failed';
             if (axios.isAxiosError(error)) {
-                errorMessage = error.response?.data?.message || errorMessage;
+                console.error('Response status:', error.response?.status);
+                console.error('Response data:', error.response?.data);
+                console.error('Request URL:', error.config?.url);
+                if (error.code === 'ERR_NETWORK') {
+                    errorMessage = `Network error: Cannot reach backend at ${BACKEND_URL}. Check CORS and server status.`;
+                } else {
+                    errorMessage = error.response?.data?.detail || error.response?.data?.message || errorMessage;
+                }
             }
             onError?.(errorMessage);
             alert(errorMessage);
@@ -39,7 +47,9 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
     };
 
     const handleError = () => {
-        const errorMessage = 'Google sign-in was cancelled or failed';
+        console.error('Google OAuth error: The Google sign-in popup failed or was cancelled.');
+        console.error('Check: 1) VITE_GOOGLE_CLIENT_ID is set correctly 2) Authorized JavaScript origins in Google Cloud Console includes', window.location.origin);
+        const errorMessage = `Google sign-in failed. Make sure ${window.location.origin} is in your Google Cloud Console authorized origins.`;
         onError?.(errorMessage);
         alert(errorMessage);
     };
