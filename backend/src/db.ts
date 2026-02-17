@@ -47,15 +47,53 @@ const ContentSchema = new Schema ({
     // Owner of this content
     userId: { type: mongoose.Types.ObjectId, ref: "User", required: true },
 
-    // Optional metadata (for future use: OG data, thumbnails, etc.)
-    metadata: { type: Schema.Types.Mixed },
+    // --- Enrichment fields ---
+    enrichmentStatus: {
+        type: String,
+        enum: ['pending', 'processing', 'enriched', 'failed', 'skipped'],
+        default: 'pending'
+    },
+    enrichmentError: { type: String },
+    enrichmentRetries: { type: Number, default: 0 },
+    enrichedAt: { type: Date },
 
-    // Timestamp for sorting and display
-    createdAt: { type: Date, default: Date.now }
+    // Extracted metadata from provider APIs
+    metadata: {
+        title: { type: String },
+        description: { type: String },
+        author: { type: String },
+        authorUrl: { type: String },
+        thumbnailUrl: { type: String },
+        publishedDate: { type: Date },
+        tags: [{ type: String }],
+        language: { type: String },
+
+        // Full text content for RAG (article body, README, transcript, tweet text)
+        fullText: { type: String },
+        fullTextType: { type: String, enum: ['transcript', 'article', 'markdown', 'plain'] },
+
+        // Timestamped transcript segments (YouTube)
+        transcriptSegments: [{
+            text: { type: String },
+            start: { type: Number },
+            duration: { type: Number },
+        }],
+
+        // Provider-specific structured data (varies by type)
+        providerData: { type: Schema.Types.Mixed },
+
+        extractedAt: { type: Date },
+        extractorVersion: { type: String },
+    },
+
+}, {
+    timestamps: true, // adds createdAt and updatedAt automatically
 });
 
 // Index for efficient queries by user, sorted by creation date
 ContentSchema.index({ userId: 1, createdAt: -1 });
+// Index for enrichment service polling
+ContentSchema.index({ enrichmentStatus: 1, createdAt: 1 });
 
 export const ContentModel = mongoose.model("Content", ContentSchema);
 

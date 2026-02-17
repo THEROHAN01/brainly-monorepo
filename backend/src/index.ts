@@ -9,6 +9,8 @@ import { UserModel, ContentModel, connectDB, LinkModel, TagModel } from './db';
 import { userMiddleware } from './middleware';
 import { random } from './utils';
 import { parseUrl, getProvider, getProviderInfo } from './providers';
+import { startEnrichmentService } from './services/enrichment.service';
+import { logger } from './logger';
 
 // Validation schemas
 const signupSchema = z.object({
@@ -48,8 +50,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
-connectDB();
 
 const PORT = process.env.PORT || 5000;
 
@@ -573,6 +573,15 @@ app.get("/api/v1/me", userMiddleware, async (req: Request, res: Response) => {
 });
 
 
-app.listen(PORT , () => {
-    console.log(`Server running on port ${PORT}`)
+async function main() {
+    await connectDB();
+    app.listen(PORT, () => {
+        logger.info({ port: PORT }, 'Server running');
+    });
+    await startEnrichmentService();
+}
+
+main().catch((err) => {
+    logger.fatal({ err }, 'Fatal startup error');
+    process.exit(1);
 });
