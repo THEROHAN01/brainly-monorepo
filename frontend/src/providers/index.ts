@@ -2,30 +2,46 @@
  * Content Provider Registry (Frontend)
  *
  * Central registry for all content providers.
- * Provides functions for URL parsing, validation, and provider lookup.
+ * Providers are conditionally registered based on feature flags.
  *
  * ADDING NEW PROVIDERS:
- * 1. Create a new provider file: spotify.provider.ts
+ * 1. Create a new provider file: {name}.provider.ts
  * 2. Import it here
- * 3. Add it to the `providers` array BEFORE genericProvider
+ * 3. Add it to the `providerMap` with its config flag key
+ * 4. Add the flag to config/providers.ts
  */
 
 import type { ContentProvider, ParsedContent, ValidationResult } from './base';
+import { providerConfig } from '../config/providers';
 import { youtubeProvider } from './youtube.provider';
 import { twitterProvider } from './twitter.provider';
+import { instagramProvider } from './instagram.provider';
+import { githubProvider } from './github.provider';
+import { mediumProvider } from './medium.provider';
+import { notionProvider } from './notion.provider';
 import { genericProvider } from './generic.provider';
 
 /**
- * Registered content providers in priority order.
- * More specific providers come first, generic fallback is last.
+ * Map of provider config flag key to provider instance.
+ * Order matters — more specific providers first.
+ */
+const providerMap: Array<{ key: keyof typeof providerConfig; provider: ContentProvider }> = [
+    { key: 'youtube',   provider: youtubeProvider },
+    { key: 'twitter',   provider: twitterProvider },
+    { key: 'instagram', provider: instagramProvider },
+    { key: 'github',    provider: githubProvider },
+    { key: 'medium',    provider: mediumProvider },
+    { key: 'notion',    provider: notionProvider },
+];
+
+/**
+ * Build the active providers list based on config flags.
+ * Generic fallback is always included at the end.
  */
 const providers: ContentProvider[] = [
-    youtubeProvider,
-    twitterProvider,
-    // Future providers:
-    // notionProvider,
-    // spotifyProvider,
-    // etc.
+    ...providerMap
+        .filter(({ key }) => providerConfig[key])
+        .map(({ provider }) => provider),
     genericProvider, // Always last
 ];
 
@@ -60,7 +76,6 @@ export function getProviderInfo(): Array<{
 
 /**
  * Parse a URL string and auto-detect its content type.
- * This is the main entry point for client-side URL processing.
  */
 export function parseUrl(urlString: string): ParsedContent | null {
     let url: URL;
@@ -94,7 +109,6 @@ export function parseUrl(urlString: string): ParsedContent | null {
 
 /**
  * Quick validation for instant UI feedback.
- * Returns a ValidationResult suitable for form validation.
  */
 export function quickValidateUrl(urlString: string): ValidationResult {
     if (!urlString || urlString.trim() === '') {
@@ -135,7 +149,6 @@ export function isValidUrl(urlString: string): boolean {
 
 /**
  * Get embed URL for content by type and ID.
- * Useful for rendering stored content.
  */
 export function getEmbedUrl(type: string, contentId: string): string | undefined {
     const provider = getProvider(type);
@@ -152,4 +165,12 @@ export function getCanonicalUrl(type: string, contentId: string): string {
 
 // Re-export types and providers
 export * from './base';
-export { youtubeProvider, twitterProvider, genericProvider };
+export {
+    youtubeProvider,
+    twitterProvider,
+    instagramProvider,
+    githubProvider,
+    mediumProvider,
+    notionProvider,
+    genericProvider
+};

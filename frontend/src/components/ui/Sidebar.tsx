@@ -1,12 +1,16 @@
 import { Logo } from "../../icons/Logo";
 import { TwitterIcon } from "../../icons/TwitterIcon";
 import { YoutubeIcon } from "../../icons/YoutubeIcon";
+import { InstagramIcon } from "../../icons/InstagramIcon";
+import { GithubIcon } from "../../icons/GithubIcon";
+import { MediumIcon } from "../../icons/MediumIcon";
+import { NotionIcon } from "../../icons/NotionIcon";
 import { TagIcon } from "../../icons/TagIcon";
 import { SidebarItem } from "./SidebarItem";
 import type { Tag } from "../../types/tag";
 
 /** Filter types for content filtering - matches provider types */
-export type FilterType = "all" | "twitter" | "youtube" | "link";
+export type FilterType = "all" | "twitter" | "youtube" | "instagram" | "github" | "medium" | "notion" | "link";
 
 /** Link icon for generic links */
 function LinkIcon() {
@@ -58,6 +62,30 @@ export function Sidebar({ filter = "all", onFilterChange, tags }: SidebarProps) 
                     icon={<YoutubeIcon />}
                     isActive={filter === "youtube"}
                     onClick={() => onFilterChange?.("youtube")}
+                />
+                <SidebarItem
+                    text="Instagram"
+                    icon={<InstagramIcon />}
+                    isActive={filter === "instagram"}
+                    onClick={() => onFilterChange?.("instagram")}
+                />
+                <SidebarItem
+                    text="GitHub"
+                    icon={<GithubIcon />}
+                    isActive={filter === "github"}
+                    onClick={() => onFilterChange?.("github")}
+                />
+                <SidebarItem
+                    text="Medium"
+                    icon={<MediumIcon />}
+                    isActive={filter === "medium"}
+                    onClick={() => onFilterChange?.("medium")}
+                />
+                <SidebarItem
+                    text="Notion"
+                    icon={<NotionIcon />}
+                    isActive={filter === "notion"}
+                    onClick={() => onFilterChange?.("notion")}
                 />
                 <SidebarItem
                     text="Links"

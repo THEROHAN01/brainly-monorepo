@@ -52,6 +52,10 @@ function TypeBadge({ type, displayName }: { type: string; displayName: string })
     const colorClasses: Record<string, string> = {
         youtube: 'bg-red-500/20 text-red-400 border-red-500/30',
         twitter: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        instagram: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+        github: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+        medium: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        notion: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
         link: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     };
 
