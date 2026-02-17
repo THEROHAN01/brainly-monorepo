@@ -160,13 +160,24 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
                         />
                     )}
 
-                    {/* oEmbed embed (Twitter, etc.) */}
+                    {/* oEmbed embed (Twitter) */}
                     {embedType === 'oembed' && type === 'twitter' && (
                         <div ref={twitterRef}>
                             <blockquote className="twitter-tweet">
                                 <a href={link.replace("x.com", "twitter.com")}></a>
                             </blockquote>
                         </div>
+                    )}
+
+                    {/* oEmbed embed (Instagram) */}
+                    {embedType === 'oembed' && type === 'instagram' && embedUrl && (
+                        <iframe
+                            className="w-full rounded border-0"
+                            src={embedUrl}
+                            title={title}
+                            height="480"
+                            allowFullScreen
+                        />
                     )}
 
                     {/* Card/Link embed (generic links and non-embeddable content) */}
