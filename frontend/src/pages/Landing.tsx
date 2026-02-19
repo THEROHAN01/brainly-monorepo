@@ -8,7 +8,7 @@ import { ArrowRightIcon } from "../icons/ArrowRightIcon";
 import { ShieldIcon } from "../icons/ShieldIcon";
 import { TwitterIcon } from "../icons/TwitterIcon";
 import { YoutubeIcon } from "../icons/YoutubeIcon";
-import { GridPattern, Particles, TextShimmer, BlurFade, BorderBeam, MagicCard } from "../components/magicui";
+import { GridPattern, TextShimmer, BlurFade, BorderBeam, MagicCard } from "../components/magicui";
 
 export function Landing() {
     return (
@@ -49,9 +49,8 @@ export function Landing() {
             <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
                 {/* Background Effects */}
                 <GridPattern className="opacity-40" />
-                <Particles quantity={40} />
-                <div className="absolute top-20 left-10 w-72 h-72 bg-brand-primary/20 rounded-full blur-[100px] animate-float" />
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-brand-primary/10 rounded-full blur-[120px] animate-float-delayed" />
+                <div className="absolute top-20 left-10 w-72 h-72 bg-brand-primary/20 rounded-full blur-[100px]" />
+                <div className="absolute bottom-20 right-10 w-96 h-96 bg-brand-primary/10 rounded-full blur-[120px]" />
 
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="text-center max-w-4xl mx-auto">
@@ -311,7 +310,7 @@ export function Landing() {
                         </BlurFade>
 
                         {/* Large Card 2 - Powerful Search */}
-                        <BlurFade delay={0.4} className="lg:col-span-2">
+                        <BlurFade delay={0.25} className="lg:col-span-2">
                             <MagicCard className="group relative rounded-3xl border border-brand-surface bg-gradient-to-br from-brand-surface-dark to-brand-bg p-8 hover:border-brand-primary/50 transition-all duration-500 overflow-hidden h-full">
                                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-brand-primary/5 rounded-full blur-[80px] group-hover:bg-brand-primary/10 transition-all duration-500" />
                                 <div className="relative z-10">
@@ -335,7 +334,7 @@ export function Landing() {
                         </BlurFade>
 
                         {/* Small Card - Share Collections */}
-                        <BlurFade delay={0.5}>
+                        <BlurFade delay={0.3}>
                             <MagicCard className="group relative rounded-3xl border border-brand-surface bg-gradient-to-br from-brand-surface-dark to-brand-bg p-8 hover:border-brand-primary/50 transition-all duration-500 h-full">
                                 <div className="w-14 h-14 rounded-2xl bg-brand-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                     <svg className="w-8 h-8 text-brand-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -352,7 +351,7 @@ export function Landing() {
                         </BlurFade>
 
                         {/* Small Card - Never Lose Content */}
-                        <BlurFade delay={0.6}>
+                        <BlurFade delay={0.35}>
                             <MagicCard className="group relative rounded-3xl border border-brand-surface bg-gradient-to-br from-brand-surface-dark to-brand-bg p-8 hover:border-brand-primary/50 transition-all duration-500 h-full">
                                 <div className="w-14 h-14 rounded-2xl bg-brand-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                     <ShieldIcon size="lg" className="text-brand-primary" />
@@ -365,7 +364,7 @@ export function Landing() {
                         </BlurFade>
 
                         {/* Small Card - Auto Organize */}
-                        <BlurFade delay={0.7}>
+                        <BlurFade delay={0.4}>
                             <MagicCard className="group relative rounded-3xl border border-brand-surface bg-gradient-to-br from-brand-surface-dark to-brand-bg p-8 hover:border-brand-primary/50 transition-all duration-500 h-full">
                                 <div className="w-14 h-14 rounded-2xl bg-brand-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                     <svg className="w-8 h-8 text-brand-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -562,7 +561,6 @@ export function Landing() {
             {/* CTA Section */}
             <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
                 {/* Background Effects */}
-                <GridPattern className="opacity-30" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-surface/50 via-brand-bg to-brand-surface/50" />
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-primary/10 rounded-full blur-[150px]" />
 

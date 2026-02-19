@@ -21,6 +21,7 @@ type SortOption = "date-desc" | "date-asc" | "title-asc" | "title-desc" | "type"
 
 export function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
@@ -112,9 +113,9 @@ export function Dashboard() {
   return (
     <>
       <div>
-        <Sidebar filter={filter} onFilterChange={setFilter} tags={availableTags} />
+        <Sidebar filter={filter} onFilterChange={setFilter} tags={availableTags} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className='p-4 ml-72 min-h-screen bg-brand-bg border-2 border-brand-surface'>
+        <div className='p-4 md:ml-72 min-h-screen bg-brand-bg border-2 border-brand-surface'>
           <CreateContentModal
             open={modalOpen}
             onClose={() => setModalOpen(false)}
@@ -134,16 +135,28 @@ export function Dashboard() {
             onCancel={() => setDeleteConfirm({ open: false, contentId: null })}
           />
 
-          <div className='flex justify-between items-center gap-4 mb-6'>
-            {/* Search and Sort */}
-            <div className="flex items-center gap-3 flex-1 max-w-2xl">
-              {/* Search Bar */}
+          {/* Top toolbar */}
+          <div className='flex flex-col gap-4 mb-6'>
+            {/* Row 1: Hamburger + Actions */}
+            <div className="flex justify-between items-center gap-3">
+              {/* Mobile hamburger */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-2 text-brand-text hover:text-brand-primary transition-colors rounded-lg hover:bg-brand-surface cursor-pointer"
+                aria-label="Open sidebar menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              {/* Search Bar - grows to fill */}
               <div className="relative flex-1">
                 <SearchIcon size="md" className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-text/40" />
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="Search by title, URL, or tags... (Press / to focus)"
+                  placeholder="Search by title, URL, or tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text placeholder:text-brand-text/40 focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow"
@@ -151,7 +164,7 @@ export function Dashboard() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text/60 hover:text-brand-text transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text/60 hover:text-brand-text transition-colors cursor-pointer"
                   >
                     ✕
                   </button>
@@ -162,7 +175,7 @@ export function Dashboard() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow cursor-pointer"
+                className="hidden sm:block px-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow cursor-pointer"
               >
                 <option value="date-desc">Newest First</option>
                 <option value="date-asc">Oldest First</option>
@@ -170,41 +183,72 @@ export function Dashboard() {
                 <option value="title-desc">Title (Z-A)</option>
                 <option value="type">Type</option>
               </select>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setModalOpen(true)}
-                variant="primary"
-                text="Add Content"
-                startIcon={<PlusIcon size='lg' />}
-              />
-            <Button
-              onClick={async () => {
-                try {
-                  const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
-                    share: true
-                  }, {
-                    headers: {
-                      "Authorization": `Bearer ${token}`
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Button
+                  onClick={() => setModalOpen(true)}
+                  variant="primary"
+                  text=""
+                  startIcon={<PlusIcon size='lg' />}
+                  className="sm:hidden"
+                />
+                <Button
+                  onClick={() => setModalOpen(true)}
+                  variant="primary"
+                  text="Add Content"
+                  startIcon={<PlusIcon size='lg' />}
+                  className="hidden sm:inline-flex"
+                />
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
+                        share: true
+                      }, {
+                        headers: {
+                          "Authorization": `Bearer ${token}`
+                        }
+                      });
+                      const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
+                      await navigator.clipboard.writeText(shareUrl);
+                      toast.success("Share link copied to clipboard!");
+                    } catch {
+                      toast.error("Failed to generate share link. Please try again.");
                     }
-                  });
-                  const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
-                  await navigator.clipboard.writeText(shareUrl);
-                  toast.success("Share link copied to clipboard!");
-                } catch {
-                  toast.error("Failed to generate share link. Please try again.");
-                }
-              }}
-              variant="secondary"
-              text="Share Brain"
-              startIcon={<ShareIcon size='lg' />}
-            />
+                  }}
+                  variant="secondary"
+                  text=""
+                  startIcon={<ShareIcon size='lg' />}
+                  className="sm:hidden"
+                />
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
+                        share: true
+                      }, {
+                        headers: {
+                          "Authorization": `Bearer ${token}`
+                        }
+                      });
+                      const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
+                      await navigator.clipboard.writeText(shareUrl);
+                      toast.success("Share link copied to clipboard!");
+                    } catch {
+                      toast.error("Failed to generate share link. Please try again.");
+                    }
+                  }}
+                  variant="secondary"
+                  text="Share Brain"
+                  startIcon={<ShareIcon size='lg' />}
+                  className="hidden sm:inline-flex"
+                />
 
-              {!userLoading && user && (
-                <UserAvatar user={user} onLogout={logout} />
-              )}
+                {!userLoading && user && (
+                  <UserAvatar user={user} onLogout={logout} />
+                )}
+              </div>
             </div>
           </div>
 
@@ -220,16 +264,48 @@ export function Dashboard() {
             <EmptyState onAction={() => setModalOpen(true)} />
           ) : filteredContents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <p className="text-brand-text-muted mb-2">No {filter} content found</p>
-              <button
-                onClick={() => setFilter("all")}
-                className="text-brand-primary hover:underline"
-              >
-                View all content
-              </button>
+              <div className="w-14 h-14 bg-brand-surface rounded-full flex items-center justify-center mb-4">
+                <SearchIcon size="lg" className="text-brand-text-muted" />
+              </div>
+              {searchQuery ? (
+                <>
+                  <p className="text-brand-text mb-1">
+                    No results for "<span className="text-brand-primary">{searchQuery}</span>"
+                  </p>
+                  <p className="text-brand-text-muted text-sm mb-4">
+                    {filter !== "all" ? `in ${filter} content` : "across all content"}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="px-4 py-2 text-sm bg-brand-surface text-brand-text rounded-lg hover:bg-brand-surface-dark transition-colors cursor-pointer"
+                    >
+                      Clear search
+                    </button>
+                    {filter !== "all" && (
+                      <button
+                        onClick={() => { setFilter("all"); }}
+                        className="px-4 py-2 text-sm text-brand-primary hover:underline cursor-pointer"
+                      >
+                        Search all content
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-brand-text-muted mb-4">No {filter} content found</p>
+                  <button
+                    onClick={() => setFilter("all")}
+                    className="text-brand-primary hover:underline cursor-pointer"
+                  >
+                    View all content
+                  </button>
+                </>
+              )}
             </div>
           ) : (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4'>
               {filteredContents.map((content) => (
                 <Card
                   key={content._id}

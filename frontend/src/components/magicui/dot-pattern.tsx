@@ -9,7 +9,7 @@ interface DotPatternProps {
 
 export function DotPattern({
     className,
-    dotColor = "rgba(8, 203, 0, 0.15)",
+    dotColor = "rgba(34, 197, 94, 0.15)",
     dotSize = 1,
     gap = 20,
 }: DotPatternProps) {

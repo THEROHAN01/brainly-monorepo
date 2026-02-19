@@ -80,7 +80,7 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
         <div className="relative">
             {/* Delete Confirmation Overlay */}
             {showConfirm && (
-                <div className="absolute inset-0 bg-brand-bg/90 rounded-md z-10 flex flex-col items-center justify-center p-4">
+                <div className="absolute inset-0 bg-brand-bg/90 rounded-md z-10 flex flex-col items-center justify-center p-4" role="alertdialog" aria-label="Confirm deletion">
                     <p className="text-brand-text text-center mb-4">Delete this content?</p>
                     <div className="flex gap-2">
                         <button
@@ -101,7 +101,7 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
                 </div>
             )}
 
-            <div className="p-4 bg-brand-bg rounded-md border-brand-surface max-w-72 border min-h-48">
+            <div className="p-4 bg-brand-bg rounded-md border-brand-surface border min-h-48">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center text-md text-brand-text flex-1 min-w-0">
                         <div className="pr-2 text-brand-text flex-shrink-0">
@@ -112,8 +112,8 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
                     <div className="flex flex-shrink-0 gap-1">
                         <button
                             onClick={handleCopyLink}
-                            className="pr-1 text-brand-text hover:text-brand-primary transition-colors"
-                            title="Copy link"
+                            className="pr-1 text-brand-text hover:text-brand-primary transition-colors cursor-pointer"
+                            aria-label="Copy link"
                         >
                             <CopyIcon size="md" />
                         </button>
@@ -122,15 +122,15 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
                             target="_blank"
                             rel="noopener noreferrer"
                             className="pr-1 text-brand-text hover:text-brand-primary transition-colors"
-                            title="Open in new tab"
+                            aria-label={`Open ${title} in new tab`}
                         >
                             <ShareIcon size="md" />
                         </a>
                         {onDelete && (
                             <button
                                 onClick={() => setShowConfirm(true)}
-                                className="text-brand-text-muted hover:text-red-400 transition-colors"
-                                title="Delete content"
+                                className="text-brand-text-muted hover:text-red-400 transition-colors cursor-pointer"
+                                aria-label="Delete content"
                             >
                                 <TrashIcon size="md" />
                             </button>

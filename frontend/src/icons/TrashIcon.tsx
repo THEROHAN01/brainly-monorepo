@@ -1,17 +1,10 @@
-interface TrashIconProps {
-    size?: "sm" | "md" | "lg";
-}
+import type { IconProps } from ".";
+import { iconSizeVariants } from ".";
 
-const sizeMap = {
-    sm: "w-4 h-4",
-    md: "w-5 h-5",
-    lg: "w-6 h-6"
-};
-
-export function TrashIcon({ size = "md" }: TrashIconProps) {
+export function TrashIcon({ size = "md" }: Partial<IconProps>) {
     return (
         <svg
-            className={sizeMap[size]}
+            className={iconSizeVariants[size!]}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

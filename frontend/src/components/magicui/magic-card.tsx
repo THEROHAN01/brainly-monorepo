@@ -11,7 +11,7 @@ interface MagicCardProps {
 export function MagicCard({
     children,
     className,
-    gradientColor = "rgba(8, 203, 0, 0.15)",
+    gradientColor = "rgba(34, 197, 94, 0.15)",
     gradientSize = 200,
 }: MagicCardProps) {
     const divRef = useRef<HTMLDivElement>(null);
