@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -41,6 +43,12 @@ if (!GOOGLE_CLIENT_ID) {
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 const app = express();
 
+// Security headers via Helmet
+app.use(helmet({
+  contentSecurityPolicy: false,       // Disabled — frontend is a separate SPA origin
+  crossOriginEmbedderPolicy: false,   // Allow cross-origin embeds (YouTube, Twitter iframes)
+}));
+
 // CORS configuration
 app.use(cors({
   origin: process.env.CORS_ORIGIN || "http://localhost:5173",
@@ -51,9 +59,41 @@ app.use(cors({
 
 app.use(express.json());
 
+// --- Rate Limiters ---
+
+// Global: 100 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,   // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false,     // Disable `X-RateLimit-*` headers
+  message: { message: "Too many requests, please try again later." },
+});
+
+// Strict: auth endpoints — 10 attempts per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts, please try again after 15 minutes." },
+});
+
+// Content creation: 30 per 15 minutes per IP
+const contentCreationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many content submissions, please try again later." },
+});
+
+// Apply global limiter to all routes
+app.use(globalLimiter);
+
 const PORT = process.env.PORT || 5000;
 
-app.post("/api/v1/signup", async (req: Request, res: Response) => {
+app.post("/api/v1/signup", authLimiter, async (req: Request, res: Response) => {
     // Validate input
     const result = signupSchema.safeParse(req.body);
     if (!result.success) {
@@ -81,7 +121,7 @@ app.post("/api/v1/signup", async (req: Request, res: Response) => {
     }
 });
 
-app.post("/api/v1/signin", async (req: Request, res: Response) => {
+app.post("/api/v1/signin", authLimiter, async (req: Request, res: Response) => {
     // Validate input
     const result = signinSchema.safeParse(req.body);
     if (!result.success) {
@@ -123,7 +163,7 @@ app.post("/api/v1/signin", async (req: Request, res: Response) => {
 });
 
 // Google OAuth endpoint
-app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
+app.post("/api/v1/auth/google", authLimiter, async (req: Request, res: Response) => {
     if (!googleClient || !GOOGLE_CLIENT_ID) {
         return res.status(503).json({ message: "Google authentication is not configured" });
     }
@@ -202,7 +242,7 @@ app.post("/api/v1/auth/google", async (req: Request, res: Response) => {
  * @body {string} link - URL to save (any valid HTTP/HTTPS URL)
  * @body {string[]} [tags] - Optional array of tag IDs
  */
-app.post("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
+app.post("/api/v1/content", contentCreationLimiter, userMiddleware, async (req: Request, res: Response) => {
     const { title, link, tags } = req.body;
 
     // Validate required fields
