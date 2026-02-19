@@ -1,4 +1,12 @@
 import { Button } from './Button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from './Dialog';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -21,22 +29,15 @@ export function ConfirmDialog({
   onCancel,
   variant = 'danger'
 }: ConfirmDialogProps) {
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
-      />
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
 
-      {/* Dialog */}
-      <div className="relative bg-brand-surface rounded-xl shadow-2xl w-full max-w-md p-6 border border-brand-border mx-4">
-        <h2 className="text-xl font-bold text-brand-text mb-2">{title}</h2>
-        <p className="text-brand-text/70 mb-6">{message}</p>
-
-        <div className="flex gap-3 justify-end">
+        <DialogFooter className="mt-6">
           <Button
             onClick={onCancel}
             variant="secondary"
@@ -51,8 +52,8 @@ export function ConfirmDialog({
             text={confirmText}
             className={variant === 'danger' ? 'bg-red-500 hover:bg-red-600' : ''}
           />
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

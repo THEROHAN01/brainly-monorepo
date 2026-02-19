@@ -21,12 +21,6 @@ function LinkIcon() {
     );
 }
 
-interface SidebarProps {
-    filter?: FilterType;
-    onFilterChange?: (filter: FilterType) => void;
-    tags?: Tag[];
-}
-
 function AllIcon() {
     return (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,10 +29,23 @@ function AllIcon() {
     );
 }
 
-export function Sidebar({ filter = "all", onFilterChange, tags }: SidebarProps) {
+interface SidebarProps {
+    filter?: FilterType;
+    onFilterChange?: (filter: FilterType) => void;
+    tags?: Tag[];
+    open?: boolean;
+    onClose?: () => void;
+}
+
+function SidebarContent({ filter = "all", onFilterChange, tags, onItemClick }: SidebarProps & { onItemClick?: () => void }) {
+    const handleFilterChange = (f: FilterType) => {
+        onFilterChange?.(f);
+        onItemClick?.();
+    };
+
     return (
-        <div className="h-screen bg-brand-bg border-r border-brand-surface w-72 fixed left-0 top-0 pl-6 overflow-y-auto">
-            <div className="flex text-2xl pt-8 items-center text-brand-text">
+        <>
+            <div className="flex text-2xl pt-8 items-center text-brand-text pl-6">
                 <div className="pr-2 text-brand-primary">
                     <Logo />
                 </div>
@@ -49,49 +56,49 @@ export function Sidebar({ filter = "all", onFilterChange, tags }: SidebarProps) 
                     text="All Content"
                     icon={<AllIcon />}
                     isActive={filter === "all"}
-                    onClick={() => onFilterChange?.("all")}
+                    onClick={() => handleFilterChange("all")}
                 />
                 <SidebarItem
                     text="Twitter"
                     icon={<TwitterIcon />}
                     isActive={filter === "twitter"}
-                    onClick={() => onFilterChange?.("twitter")}
+                    onClick={() => handleFilterChange("twitter")}
                 />
                 <SidebarItem
                     text="Youtube"
                     icon={<YoutubeIcon />}
                     isActive={filter === "youtube"}
-                    onClick={() => onFilterChange?.("youtube")}
+                    onClick={() => handleFilterChange("youtube")}
                 />
                 <SidebarItem
                     text="Instagram"
                     icon={<InstagramIcon />}
                     isActive={filter === "instagram"}
-                    onClick={() => onFilterChange?.("instagram")}
+                    onClick={() => handleFilterChange("instagram")}
                 />
                 <SidebarItem
                     text="GitHub"
                     icon={<GithubIcon />}
                     isActive={filter === "github"}
-                    onClick={() => onFilterChange?.("github")}
+                    onClick={() => handleFilterChange("github")}
                 />
                 <SidebarItem
                     text="Medium"
                     icon={<MediumIcon />}
                     isActive={filter === "medium"}
-                    onClick={() => onFilterChange?.("medium")}
+                    onClick={() => handleFilterChange("medium")}
                 />
                 <SidebarItem
                     text="Notion"
                     icon={<NotionIcon />}
                     isActive={filter === "notion"}
-                    onClick={() => onFilterChange?.("notion")}
+                    onClick={() => handleFilterChange("notion")}
                 />
                 <SidebarItem
                     text="Links"
                     icon={<LinkIcon />}
                     isActive={filter === "link"}
-                    onClick={() => onFilterChange?.("link")}
+                    onClick={() => handleFilterChange("link")}
                 />
             </div>
 
@@ -114,6 +121,40 @@ export function Sidebar({ filter = "all", onFilterChange, tags }: SidebarProps) 
                     </div>
                 </div>
             )}
-        </div>
+        </>
+    );
+}
+
+export function Sidebar({ filter = "all", onFilterChange, tags, open, onClose }: SidebarProps) {
+    return (
+        <>
+            {/* Desktop sidebar - hidden on mobile */}
+            <nav aria-label="Main navigation" className="hidden md:block h-screen bg-brand-bg border-r border-brand-surface w-72 fixed left-0 top-0 overflow-y-auto">
+                <SidebarContent filter={filter} onFilterChange={onFilterChange} tags={tags} />
+            </nav>
+
+            {/* Mobile drawer overlay */}
+            {open && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black/60 z-40"
+                    onClick={onClose}
+                />
+            )}
+
+            {/* Mobile drawer */}
+            <nav
+                aria-label="Main navigation"
+                className={`md:hidden fixed left-0 top-0 h-screen bg-brand-bg border-r border-brand-surface w-72 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+                    open ? "translate-x-0" : "-translate-x-full"
+                }`}
+            >
+                <SidebarContent
+                    filter={filter}
+                    onFilterChange={onFilterChange}
+                    tags={tags}
+                    onItemClick={onClose}
+                />
+            </nav>
+        </>
     );
 }

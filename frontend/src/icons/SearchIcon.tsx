@@ -1,18 +1,10 @@
-interface IconProps {
-    size?: "sm" | "md" | "lg";
-    className?: string;
-}
+import type { IconProps } from ".";
+import { iconSizeVariants } from ".";
 
-const sizeClasses = {
-    sm: "w-4 h-4",
-    md: "w-6 h-6",
-    lg: "w-8 h-8",
-};
-
-export function SearchIcon({ size = "md", className = "" }: IconProps) {
+export function SearchIcon({ size = "md", className }: Partial<IconProps>) {
     return (
         <svg
-            className={`${sizeClasses[size]} ${className}`}
+            className={`${iconSizeVariants[size!]}${className ? ` ${className}` : ''}`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

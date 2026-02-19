@@ -7,16 +7,20 @@ export default {
     ],
     theme: {
         extend:{
+            fontFamily: {
+                sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            },
             colors: {
                 brand: {
-                    green: "#08CB00",
-                    "green-light": "#4ADE40",
-                    "green-dark": "#059600",
-                    dark: "#253900",
-                    darker: "#1a2600",
-                    black: "#000000",
-                    light: "#EEEEEE",
-                    gray: "#888888",
+                    green: "#22C55E",
+                    "green-light": "#4ADE80",
+                    "green-dark": "#16A34A",
+                    dark: "#0F172A",
+                    darker: "#1E293B",
+                    black: "#020617",
+                    light: "#F8FAFC",
+                    gray: "#94A3B8",
+                    border: "#1E293B",
                 }
             },
             animation: {
@@ -47,8 +51,8 @@ export default {
                     '50%': { transform: 'translateY(-20px)' },
                 },
                 pulseGlow: {
-                    '0%, 100%': { boxShadow: '0 0 20px rgba(8, 203, 0, 0.4)' },
-                    '50%': { boxShadow: '0 0 40px rgba(8, 203, 0, 0.8)' },
+                    '0%, 100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.4)' },
+                    '50%': { boxShadow: '0 0 40px rgba(34, 197, 94, 0.8)' },
                 },
                 gradientShift: {
                     '0%, 100%': { backgroundPosition: '0% 50%' },

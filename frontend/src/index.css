@@ -2,37 +2,41 @@
 
 /* shadcn/ui compatible CSS variables */
 :root {
-    --background: 0 0% 0%;                    /* brand-bg #000000 */
-    --foreground: 0 0% 93%;                   /* brand-text #EEEEEE */
-    --card: 74 100% 11%;                      /* brand-surface #253900 */
-    --card-foreground: 0 0% 93%;
-    --primary: 118 100% 40%;                  /* brand-primary #08CB00 */
-    --primary-foreground: 0 0% 0%;
-    --secondary: 74 100% 11%;
-    --secondary-foreground: 0 0% 93%;
-    --muted: 74 50% 15%;
-    --muted-foreground: 0 0% 53%;             /* brand-text-muted #888888 */
-    --accent: 118 100% 40%;
-    --accent-foreground: 0 0% 0%;
+    --background: 222 47% 2%;                 /* brand-bg #020617 */
+    --foreground: 210 40% 98%;               /* brand-text #F8FAFC */
+    --card: 222 47% 11%;                     /* brand-surface #0F172A */
+    --card-foreground: 210 40% 98%;
+    --primary: 142 71% 45%;                  /* brand-primary #22C55E */
+    --primary-foreground: 222 47% 2%;
+    --secondary: 217 33% 17%;               /* brand-surface-dark #1E293B */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;         /* brand-text-muted #94A3B8 */
+    --accent: 142 71% 45%;
+    --accent-foreground: 222 47% 2%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 74 50% 20%;
-    --input: 74 50% 20%;
-    --ring: 118 100% 40%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 142 71% 45%;
     --radius: 0.5rem;
 }
 
 /* Tailwind v4 Theme Configuration */
 @theme {
+    /* Font Family */
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
     /* Brand Colors - Semantic naming for easy theme changes */
-    --color-brand-primary: #08CB00;        /* Main accent color */
-    --color-brand-primary-light: #4ADE40;  /* Lighter variant */
-    --color-brand-primary-dark: #059600;   /* Darker variant */
-    --color-brand-surface: #253900;        /* Card/surface backgrounds */
-    --color-brand-surface-dark: #1a2600;   /* Darker surfaces */
-    --color-brand-bg: #000000;             /* Main background */
-    --color-brand-text: #EEEEEE;           /* Primary text */
-    --color-brand-text-muted: #888888;     /* Secondary/muted text */
+    --color-brand-primary: #22C55E;        /* Main accent color */
+    --color-brand-primary-light: #4ADE80;  /* Lighter variant */
+    --color-brand-primary-dark: #16A34A;   /* Darker variant */
+    --color-brand-surface: #0F172A;        /* Card/surface backgrounds */
+    --color-brand-surface-dark: #1E293B;   /* Darker surfaces */
+    --color-brand-bg: #020617;             /* Main background */
+    --color-brand-text: #F8FAFC;           /* Primary text */
+    --color-brand-text-muted: #94A3B8;     /* Secondary/muted text */
+    --color-brand-border: #1E293B;         /* Border color */
 
     /* Custom Animations */
     --animate-fade-in: fade-in 0.6s ease-out forwards;
@@ -67,8 +71,8 @@
 }
 
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(8, 203, 0, 0.4); }
-    50% { box-shadow: 0 0 40px rgba(8, 203, 0, 0.8); }
+    0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.8); }
 }
 
 @keyframes gradient-shift {
@@ -337,3 +341,15 @@
 .stagger-6 { animation-delay: 0.6s; }
 .stagger-7 { animation-delay: 0.7s; }
 .stagger-8 { animation-delay: 0.8s; }
+
+/* Accessibility: Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

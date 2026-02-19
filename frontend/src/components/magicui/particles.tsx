@@ -20,7 +20,7 @@ interface Particle {
 export function Particles({
     className,
     quantity = 30,
-    color = "#08CB00",
+    color = "#22C55E",
     size = 2,
 }: ParticlesProps) {
     const [particles, setParticles] = useState<Particle[]>([]);

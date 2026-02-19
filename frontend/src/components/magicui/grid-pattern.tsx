@@ -11,7 +11,7 @@ export function GridPattern({
     width = 40,
     height = 40,
     className,
-    strokeColor = "rgba(8, 203, 0, 0.08)",
+    strokeColor = "rgba(34, 197, 94, 0.08)",
 }: GridPatternProps) {
     return (
         <svg
