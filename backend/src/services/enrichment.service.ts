@@ -87,7 +87,7 @@ async function processNextBatch(): Promise<void> {
                 OR (
                     enrichment_retries > 0
                     AND enrichment_retries < ${config.extractors.maxRetries}
-                    AND updated_at < ${retryAfter.toISOString()}
+                    AND updated_at < ${retryAfter}
                 )
               )
             ORDER BY user_id, created_at ASC

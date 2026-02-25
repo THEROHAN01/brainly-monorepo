@@ -71,4 +71,10 @@ ALTER TABLE "share_links" ADD CONSTRAINT "share_links_user_id_users_id_fk" FOREI
 ALTER TABLE "tags" ADD CONSTRAINT "tags_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_contents_user_created" ON "contents" USING btree ("user_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_contents_enrichment" ON "contents" USING btree ("enrichment_status","created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_tag_name_user" ON "tags" USING btree ("name","user_id");
+CREATE UNIQUE INDEX "idx_tag_name_user" ON "tags" USING btree ("name","user_id");--> statement-breakpoint
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;--> statement-breakpoint
+CREATE TRIGGER contents_updated_at BEFORE UPDATE ON contents
+FOR EACH ROW EXECUTE FUNCTION update_updated_at();

@@ -16,15 +16,31 @@ import type { LanguageModel } from "ai";
 
 export type LLMProvider = "openai" | "anthropic";
 
-const openaiProvider = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const anthropicProvider = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let _openaiProvider: ReturnType<typeof createOpenAI> | null = null;
+let _anthropicProvider: ReturnType<typeof createAnthropic> | null = null;
+
+function getOpenAIProvider() {
+    if (!_openaiProvider) {
+        if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not set");
+        _openaiProvider = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+    return _openaiProvider;
+}
+
+function getAnthropicProvider() {
+    if (!_anthropicProvider) {
+        if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set");
+        _anthropicProvider = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    }
+    return _anthropicProvider;
+}
 
 export function getModel(provider: LLMProvider = "openai", modelId?: string): LanguageModel {
     switch (provider) {
         case "openai":
-            return openaiProvider(modelId ?? "gpt-4o-mini");
+            return getOpenAIProvider()(modelId ?? "gpt-4o-mini");
         case "anthropic":
-            return anthropicProvider(modelId ?? "claude-sonnet-4-6-20250514");
+            return getAnthropicProvider()(modelId ?? "claude-sonnet-4-6-20250514");
         default:
             throw new Error(`Unknown LLM provider: ${provider}`);
     }

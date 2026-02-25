@@ -8,11 +8,11 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { eq, and, or, inArray } from 'drizzle-orm';
-import { db, schema } from './db/index';
+import { db, pool, schema } from './db/index';
 import { withMongoId } from './db/transforms';
 import { userMiddleware } from './middleware';
 import { parseUrl, getProviderInfo } from './providers';
-import { startEnrichmentService } from './services/enrichment.service';
+import { startEnrichmentService, stopEnrichmentService } from './services/enrichment.service';
 import { logger } from './logger';
 
 // Validation schemas
@@ -87,17 +87,14 @@ app.post("/api/v1/signup", authLimiter, async (req: Request, res: Response) => {
     }
     const { username, password } = result.data;
 
-    const [existingUser] = await db.select().from(schema.users)
-        .where(eq(schema.users.username, username)).limit(1);
-    if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
         await db.insert(schema.users).values({ username, password: hashedPassword });
         res.status(201).json({ message: "Account created successfully" });
     } catch (error: any) {
+        if (error.code === '23505') {
+            return res.status(409).json({ message: "Username already exists" });
+        }
         res.status(500).json({ message: "Failed to create account" });
     }
 });
@@ -147,13 +144,26 @@ app.post("/api/v1/auth/google", authLimiter, async (req: Request, res: Response)
             .limit(1);
 
         if (!user) {
-            const [newUser] = await db.insert(schema.users).values({
-                googleId, email,
-                username: email?.split('@')[0] || `user_${googleId?.slice(0, 8)}`,
-                profilePicture: picture,
-                authProvider: 'google'
-            }).returning();
-            user = newUser;
+            try {
+                const [newUser] = await db.insert(schema.users).values({
+                    googleId, email,
+                    username: email?.split('@')[0] || `user_${googleId?.slice(0, 8)}`,
+                    profilePicture: picture,
+                    authProvider: 'google'
+                }).returning();
+                user = newUser;
+            } catch (insertError: any) {
+                if (insertError.code === '23505') {
+                    // Race condition: another request created the user — re-fetch
+                    const [existing] = await db.select().from(schema.users)
+                        .where(or(eq(schema.users.googleId, googleId), eq(schema.users.email, email ?? '')))
+                        .limit(1);
+                    if (!existing) return res.status(500).json({ message: "Account creation conflict" });
+                    user = existing;
+                } else {
+                    throw insertError;
+                }
+            }
         } else if (!user.googleId) {
             const [updated] = await db.update(schema.users)
                 .set({ googleId, profilePicture: picture, authProvider: 'google' })
@@ -266,26 +276,30 @@ app.get("/api/v1/content/providers", (_req: Request, res: Response) => {
 });
 
 app.get("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
-    const userId = req.userId;
+    try {
+        const userId = req.userId;
 
-    const userContents = await db.query.contents.findMany({
-        where: eq(schema.contents.userId, userId),
-        with: { contentTags: { with: { tag: true } } },
-        orderBy: schema.contents.createdAt,
-    });
+        const userContents = await db.query.contents.findMany({
+            where: eq(schema.contents.userId, userId),
+            with: { contentTags: { with: { tag: true } } },
+            orderBy: schema.contents.createdAt,
+        });
 
-    res.json({
-        content: userContents.map(c => ({
-            _id: c.id,
-            title: c.title,
-            link: c.link,
-            type: c.type,
-            contentId: c.contentId,
-            userId: c.userId,
-            createdAt: c.createdAt,
-            tags: c.contentTags.map(ct => ({ _id: ct.tag.id, name: ct.tag.name })),
-        }))
-    });
+        res.json({
+            content: userContents.map(c => ({
+                _id: c.id,
+                title: c.title,
+                link: c.link,
+                type: c.type,
+                contentId: c.contentId,
+                userId: c.userId,
+                createdAt: c.createdAt,
+                tags: c.contentTags.map(ct => ({ _id: ct.tag.id, name: ct.tag.name })),
+            }))
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to fetch content" });
+    }
 });
 
 app.delete("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
@@ -382,45 +396,53 @@ app.put("/api/v1/content/:contentId/tags", userMiddleware, async (req: Request, 
 // ========== BRAIN SHARING ENDPOINTS ==========
 
 app.post("/api/v1/brain/share", userMiddleware, async (req: Request, res: Response) => {
-    const share = req.body.share;
-    if (share) {
-        const [existingLink] = await db.select().from(schema.shareLinks)
-            .where(eq(schema.shareLinks.userId, req.userId)).limit(1);
-        if (existingLink) return res.json({ hash: existingLink.hash });
+    try {
+        const share = req.body.share;
+        if (share) {
+            const [existingLink] = await db.select().from(schema.shareLinks)
+                .where(eq(schema.shareLinks.userId, req.userId)).limit(1);
+            if (existingLink) return res.json({ hash: existingLink.hash });
 
-        const hash = crypto.randomBytes(5).toString('hex');
-        await db.insert(schema.shareLinks).values({ hash, userId: req.userId });
-        return res.json({ hash });
-    } else {
-        await db.delete(schema.shareLinks).where(eq(schema.shareLinks.userId, req.userId));
-        return res.json({ message: "removed link" });
+            const hash = crypto.randomBytes(5).toString('hex');
+            await db.insert(schema.shareLinks).values({ hash, userId: req.userId });
+            return res.json({ hash });
+        } else {
+            await db.delete(schema.shareLinks).where(eq(schema.shareLinks.userId, req.userId));
+            return res.json({ message: "removed link" });
+        }
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to manage share link" });
     }
 });
 
 app.get("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
-    const hash = req.params.shareLink;
-    const [link] = await db.select().from(schema.shareLinks)
-        .where(eq(schema.shareLinks.hash, hash)).limit(1);
-    if (!link) return res.status(411).json({ message: "incorrect input" });
+    try {
+        const hash = req.params.shareLink;
+        const [link] = await db.select().from(schema.shareLinks)
+            .where(eq(schema.shareLinks.hash, hash)).limit(1);
+        if (!link) return res.status(411).json({ message: "incorrect input" });
 
-    const sharedContent = await db.select({
-        id: schema.contents.id,
-        title: schema.contents.title,
-        link: schema.contents.link,
-        type: schema.contents.type,
-        contentId: schema.contents.contentId,
-    }).from(schema.contents)
-        .where(eq(schema.contents.userId, link.userId))
-        .orderBy(schema.contents.createdAt);
+        const sharedContent = await db.select({
+            id: schema.contents.id,
+            title: schema.contents.title,
+            link: schema.contents.link,
+            type: schema.contents.type,
+            contentId: schema.contents.contentId,
+        }).from(schema.contents)
+            .where(eq(schema.contents.userId, link.userId))
+            .orderBy(schema.contents.createdAt);
 
-    const [user] = await db.select({ username: schema.users.username })
-        .from(schema.users).where(eq(schema.users.id, link.userId)).limit(1);
-    if (!user) return res.status(411).json({ message: "user not found, error should ideally not happen" });
+        const [user] = await db.select({ username: schema.users.username })
+            .from(schema.users).where(eq(schema.users.id, link.userId)).limit(1);
+        if (!user) return res.status(411).json({ message: "user not found, error should ideally not happen" });
 
-    res.json({
-        username: user.username,
-        content: sharedContent.map(c => ({ _id: c.id, ...c })),
-    });
+        res.json({
+            username: user.username,
+            content: sharedContent.map(c => withMongoId(c)),
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to fetch shared brain" });
+    }
 });
 
 // ========== SERVER BOOT ==========
@@ -430,10 +452,22 @@ async function main() {
         logger.fatal('FATAL: DATABASE_URL environment variable is not set');
         process.exit(1);
     }
-    app.listen(PORT, () => {
+
+    const server = app.listen(PORT, () => {
         logger.info({ port: PORT }, 'Server running');
     });
+
     await startEnrichmentService();
+
+    const shutdown = async () => {
+        logger.info('Shutdown signal received, closing gracefully');
+        stopEnrichmentService();
+        server.close();
+        await pool.end();
+        process.exit(0);
+    };
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
 }
 
 main().catch((err) => {
