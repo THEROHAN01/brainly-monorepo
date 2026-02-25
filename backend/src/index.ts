@@ -3,14 +3,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
-import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
-import { UserModel, ContentModel, connectDB, LinkModel, TagModel } from './db';
+import { eq, and, or, inArray } from 'drizzle-orm';
+import { db, schema } from './db/index';
+import { withMongoId } from './db/transforms';
 import { userMiddleware } from './middleware';
-import { random } from './utils';
-import { parseUrl, getProvider, getProviderInfo } from './providers';
+import { parseUrl, getProviderInfo } from './providers';
 import { startEnrichmentService } from './services/enrichment.service';
 import { logger } from './logger';
 
@@ -43,13 +44,11 @@ if (!GOOGLE_CLIENT_ID) {
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 const app = express();
 
-// Security headers via Helmet
 app.use(helmet({
-  contentSecurityPolicy: false,       // Disabled — frontend is a separate SPA origin
-  crossOriginEmbedderPolicy: false,   // Allow cross-origin embeds (YouTube, Twitter iframes)
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
 }));
 
-// CORS configuration
 app.use(cors({
   origin: process.env.CORS_ORIGIN || "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -59,240 +58,177 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- Rate Limiters ---
-
-// Global: 100 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,   // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false,     // Disable `X-RateLimit-*` headers
+  windowMs: 15 * 60 * 1000, max: 100,
+  standardHeaders: true, legacyHeaders: false,
   message: { message: "Too many requests, please try again later." },
 });
-
-// Strict: auth endpoints — 10 attempts per 15 minutes per IP
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, max: 10,
+  standardHeaders: true, legacyHeaders: false,
   message: { message: "Too many authentication attempts, please try again after 15 minutes." },
 });
-
-// Content creation: 30 per 15 minutes per IP
 const contentCreationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, max: 30,
+  standardHeaders: true, legacyHeaders: false,
   message: { message: "Too many content submissions, please try again later." },
 });
 
-// Apply global limiter to all routes
 app.use(globalLimiter);
 
 const PORT = process.env.PORT || 5000;
 
+// ========== AUTH ENDPOINTS ==========
+
 app.post("/api/v1/signup", authLimiter, async (req: Request, res: Response) => {
-    // Validate input
     const result = signupSchema.safeParse(req.body);
     if (!result.success) {
-        const errors = result.error.issues.map((e: { message: string }) => e.message);
-        return res.status(400).json({ message: errors[0] });
+        return res.status(400).json({ message: result.error.issues[0].message });
     }
-
     const { username, password } = result.data;
 
-    const existingUser = await UserModel.findOne({ username });
+    const [existingUser] = await db.select().from(schema.users)
+        .where(eq(schema.users.username, username)).limit(1);
     if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     try {
-        const user = new UserModel({ username, password: hashedPassword });
-        await user.save();
+        await db.insert(schema.users).values({ username, password: hashedPassword });
         res.status(201).json({ message: "Account created successfully" });
     } catch (error: any) {
-        console.error("Signup error:", error);
         res.status(500).json({ message: "Failed to create account" });
     }
 });
 
 app.post("/api/v1/signin", authLimiter, async (req: Request, res: Response) => {
-    // Validate input
     const result = signinSchema.safeParse(req.body);
     if (!result.success) {
-        const errors = result.error.issues.map((e: { message: string }) => e.message);
-        return res.status(400).json({ message: errors[0] });
+        return res.status(400).json({ message: result.error.issues[0].message });
     }
-
     const { username, password } = result.data;
 
-    const existingUser = await UserModel.findOne({ username });
+    const [existingUser] = await db.select().from(schema.users)
+        .where(eq(schema.users.username, username)).limit(1);
     if (!existingUser) {
         return res.status(400).json({ message: "Invalid credentials" });
     }
-
-    // Check if user has a password (Google OAuth users don't have passwords)
     if (!existingUser.password) {
-        return res.status(400).json({message: "This account uses Google sign-in. Please use Google to log in."})
+        return res.status(400).json({ message: "This account uses Google sign-in. Please use Google to log in." });
     }
 
     const isMatch = await bcrypt.compare(password, existingUser.password);
-
-    if (isMatch){
-        const token = jwt.sign(
-            { id: existingUser._id },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
-        res.json({
-            token
-        })
-        
-    }else {
-        res.status(403).json({
-            message: " Incorrect Credentials "
-        });
+    if (isMatch) {
+        const token = jwt.sign({ id: existingUser.id }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token });
+    } else {
+        res.status(403).json({ message: "Incorrect Credentials" });
     }
-
 });
 
-// Google OAuth endpoint
 app.post("/api/v1/auth/google", authLimiter, async (req: Request, res: Response) => {
     if (!googleClient || !GOOGLE_CLIENT_ID) {
         return res.status(503).json({ message: "Google authentication is not configured" });
     }
-
     const { credential } = req.body;
-
     if (!credential) {
         return res.status(400).json({ message: "Google credential is required" });
     }
-
     try {
-        // Verify the Google token
-        const ticket = await googleClient.verifyIdToken({
-            idToken: credential,
-            audience: GOOGLE_CLIENT_ID
-        });
-
+        const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
         const payload = ticket.getPayload();
-        if (!payload) {
-            return res.status(401).json({ message: "Invalid Google token" });
-        }
+        if (!payload) return res.status(401).json({ message: "Invalid Google token" });
 
-        const { sub: googleId, email, name, picture } = payload;
+        const { sub: googleId, email, picture } = payload;
 
-        // Find existing user by googleId or email
-        let user = await UserModel.findOne({
-            $or: [{ googleId }, { email }]
-        });
+        let [user] = await db.select().from(schema.users)
+            .where(or(eq(schema.users.googleId, googleId), eq(schema.users.email, email ?? '')))
+            .limit(1);
 
         if (!user) {
-            // Create new user
-            user = await UserModel.create({
-                googleId,
-                email,
+            const [newUser] = await db.insert(schema.users).values({
+                googleId, email,
                 username: email?.split('@')[0] || `user_${googleId?.slice(0, 8)}`,
                 profilePicture: picture,
                 authProvider: 'google'
-            });
+            }).returning();
+            user = newUser;
         } else if (!user.googleId) {
-            // Link Google account to existing user (found by email)
-            user.googleId = googleId;
-            user.profilePicture = picture;
-            user.authProvider = 'google';
-            await user.save();
+            const [updated] = await db.update(schema.users)
+                .set({ googleId, profilePicture: picture, authProvider: 'google' })
+                .where(eq(schema.users.id, user.id)).returning();
+            user = updated;
         }
 
-        // Generate JWT token
-        const token = jwt.sign(
-            { id: user._id },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
+        const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
         res.json({ token });
     } catch (error: any) {
-        console.error("Google auth error:", error?.message || error);
-        console.error("Google auth full error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-        res.status(401).json({
-            message: "Google authentication failed",
-            detail: error?.message || "Unknown error"
-        });
+        res.status(401).json({ message: "Google authentication failed", detail: error?.message || "Unknown error" });
     }
 });
 
-/**
- * Create new content
- *
- * This endpoint accepts any valid URL and auto-detects the content type.
- * Supported types: YouTube, Twitter, and generic links (any other URL).
- *
- * The URL is parsed to extract:
- * - type: Provider type (youtube, twitter, link)
- * - contentId: Unique identifier (video ID, tweet ID, or URL hash)
- *
- * @body {string} title - User-provided title for the content
- * @body {string} link - URL to save (any valid HTTP/HTTPS URL)
- * @body {string[]} [tags] - Optional array of tag IDs
- */
+app.get("/api/v1/me", userMiddleware, async (req: Request, res: Response) => {
+    try {
+        const [user] = await db.select({
+            id: schema.users.id,
+            username: schema.users.username,
+            email: schema.users.email,
+            profilePicture: schema.users.profilePicture,
+            authProvider: schema.users.authProvider,
+        }).from(schema.users).where(eq(schema.users.id, req.userId)).limit(1);
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json({ user });
+    } catch (error: any) {
+        res.status(500).json({ message: "Error fetching user profile" });
+    }
+});
+
+// ========== CONTENT ENDPOINTS ==========
+
 app.post("/api/v1/content", contentCreationLimiter, userMiddleware, async (req: Request, res: Response) => {
     const { title, link, tags } = req.body;
 
-    // Validate required fields
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    if (!title || typeof title !== 'string' || title.trim().length === 0)
         return res.status(400).json({ message: "Title is required" });
-    }
-
-    if (!link || typeof link !== 'string') {
+    if (!link || typeof link !== 'string')
         return res.status(400).json({ message: "Link is required" });
-    }
-
-    // Validate title length
-    if (title.length > 500) {
+    if (title.length > 500)
         return res.status(400).json({ message: "Title must be 500 characters or less" });
-    }
 
-    // Parse and validate URL using provider system
     const parsed = parseUrl(link);
-    if (!parsed) {
+    if (!parsed)
         return res.status(400).json({ message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL." });
-    }
 
     try {
         const userId = req.userId;
 
-        // Validate tags if provided (ensure they belong to this user)
-        let validTagIds: mongoose.Types.ObjectId[] = [];
+        let validTags: (typeof schema.tags.$inferSelect)[] = [];
         if (tags && Array.isArray(tags) && tags.length > 0) {
-            const userTags = await TagModel.find({
-                _id: { $in: tags },
-                userId
-            });
-            validTagIds = userTags.map(t => t._id);
+            validTags = await db.select().from(schema.tags)
+                .where(and(inArray(schema.tags.id, tags), eq(schema.tags.userId, userId)));
         }
 
-        // Create content with auto-detected type and extracted content ID
-        const content = await ContentModel.create({
+        const [content] = await db.insert(schema.contents).values({
             title: title.trim(),
-            link: parsed.originalUrl,      // Store original URL
-            contentId: parsed.contentId,   // Store extracted ID
-            type: parsed.type,             // Auto-detected type
+            link: parsed.originalUrl,
+            contentId: parsed.contentId ?? null,
+            type: parsed.type,
             userId,
-            tags: validTagIds
-        });
+        }).returning();
+
+        if (validTags.length > 0) {
+            await db.insert(schema.contentTags).values(
+                validTags.map(t => ({ contentId: content.id, tagId: t.id }))
+            );
+        }
 
         return res.status(201).json({
             message: "Content created successfully",
             content: {
-                ...content.toObject(),
-                // Include additional parsed info in response
+                ...withMongoId(content),
+                tags: validTags.map(withMongoId),
                 displayName: parsed.displayName,
                 embedUrl: parsed.embedUrl,
                 canonicalUrl: parsed.canonicalUrl,
@@ -300,41 +236,19 @@ app.post("/api/v1/content", contentCreationLimiter, userMiddleware, async (req: 
             }
         });
     } catch (error: any) {
-        console.error("Content creation error:", error);
         return res.status(500).json({ message: "Failed to create content" });
     }
 });
 
-/**
- * Validate URL and get preview information
- *
- * This endpoint validates a URL and returns information for previewing
- * the content before saving. Useful for showing embed previews in the UI.
- *
- * @body {string} link - URL to validate
- */
 app.post("/api/v1/content/validate", userMiddleware, async (req: Request, res: Response) => {
     const { link } = req.body;
+    if (!link || typeof link !== 'string')
+        return res.status(400).json({ valid: false, message: "URL is required" });
 
-    // Check if link is provided
-    if (!link || typeof link !== 'string') {
-        return res.status(400).json({
-            valid: false,
-            message: "URL is required"
-        });
-    }
-
-    // Parse URL using provider system
     const parsed = parseUrl(link);
+    if (!parsed)
+        return res.status(400).json({ valid: false, message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL." });
 
-    if (!parsed) {
-        return res.status(400).json({
-            valid: false,
-            message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL."
-        });
-    }
-
-    // Return validation result with preview information
     return res.json({
         valid: true,
         type: parsed.type,
@@ -347,274 +261,175 @@ app.post("/api/v1/content/validate", userMiddleware, async (req: Request, res: R
     });
 });
 
-/**
- * Get list of supported content providers
- *
- * Returns information about all registered content providers.
- * Useful for displaying supported platforms in the UI.
- */
-app.get("/api/v1/content/providers", (req: Request, res: Response) => {
-    const providers = getProviderInfo();
-    res.json({ providers });
+app.get("/api/v1/content/providers", (_req: Request, res: Response) => {
+    res.json({ providers: getProviderInfo() });
 });
 
-
-app.get("/api/v1/content" ,userMiddleware, async (req,res) =>{
-
+app.get("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
     const userId = req.userId;
-    const content = await ContentModel.find({
-        userId: userId
-    })
-    .populate("userId", "username")
-    .populate("tags", "name");
+
+    const userContents = await db.query.contents.findMany({
+        where: eq(schema.contents.userId, userId),
+        with: { contentTags: { with: { tag: true } } },
+        orderBy: schema.contents.createdAt,
+    });
 
     res.json({
-        content
+        content: userContents.map(c => ({
+            _id: c.id,
+            title: c.title,
+            link: c.link,
+            type: c.type,
+            contentId: c.contentId,
+            userId: c.userId,
+            createdAt: c.createdAt,
+            tags: c.contentTags.map(ct => ({ _id: ct.tag.id, name: ct.tag.name })),
+        }))
     });
 });
 
-app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
+app.delete("/api/v1/content", userMiddleware, async (req: Request, res: Response) => {
+    const contentId = req.body.contentId;
+    if (!contentId) return res.status(400).json({ message: "Content ID is required" });
 
-    const contentId  = req.body.contentId;
-    if (!contentId){
-        return res.status(400).json({message: "Content ID is required"})
-    }
     try {
-        const result = await ContentModel.findOneAndDelete({
-            _id: contentId,
-            userId: req.userId
-        });
-        if(!result){
-            return res.status(404).json({message: "Content not found"});
-        }
-        res.json({
-        message: "Content deleted successfully"
-    });
-    }catch(error){
-        res.status(400).json({message: "Invalid contentId format "})
+        const [deleted] = await db.delete(schema.contents)
+            .where(and(eq(schema.contents.id, contentId), eq(schema.contents.userId, req.userId)))
+            .returning();
+        if (!deleted) return res.status(404).json({ message: "Content not found" });
+        res.json({ message: "Content deleted successfully" });
+    } catch (error) {
+        res.status(400).json({ message: "Invalid contentId format" });
     }
-    
-    
 });
 
 // ========== TAG ENDPOINTS ==========
 
-// Get all tags for the authenticated user
 app.get("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => {
     try {
-        const userId = req.userId;
-        const tags = await TagModel.find({ userId }).sort({ name: 1 });
-        res.json({ tags });
+        const userTags = await db.select().from(schema.tags)
+            .where(eq(schema.tags.userId, req.userId)).orderBy(schema.tags.name);
+        res.json({ tags: userTags.map(withMongoId) });
     } catch (error: any) {
         res.status(500).json({ message: "Failed to fetch tags" });
     }
 });
 
-// Create a new tag
 app.post("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => {
     const { name } = req.body;
-
-    if (!name || typeof name !== 'string') {
+    if (!name || typeof name !== 'string')
         return res.status(400).json({ message: "Tag name is required" });
-    }
 
     const trimmedName = name.trim().toLowerCase();
-    if (trimmedName.length === 0 || trimmedName.length > 50) {
+    if (trimmedName.length === 0 || trimmedName.length > 50)
         return res.status(400).json({ message: "Tag name must be 1-50 characters" });
-    }
 
     try {
-        const userId = req.userId;
+        const [existingTag] = await db.select().from(schema.tags)
+            .where(and(eq(schema.tags.name, trimmedName), eq(schema.tags.userId, req.userId))).limit(1);
 
-        // Check if tag already exists for this user
-        const existingTag = await TagModel.findOne({
-            name: trimmedName,
-            userId
-        });
+        if (existingTag)
+            return res.status(409).json({ message: "Tag already exists", tag: withMongoId(existingTag) });
 
-        if (existingTag) {
-            return res.status(409).json({
-                message: "Tag already exists",
-                tag: existingTag
-            });
-        }
-
-        const tag = await TagModel.create({
-            name: trimmedName,
-            userId
-        });
-
-        res.status(201).json({ message: "Tag created successfully", tag });
+        const [tag] = await db.insert(schema.tags)
+            .values({ name: trimmedName, userId: req.userId }).returning();
+        res.status(201).json({ message: "Tag created successfully", tag: withMongoId(tag) });
     } catch (error: any) {
         res.status(500).json({ message: "Failed to create tag" });
     }
 });
 
-// Delete a tag (also removes it from all content)
 app.delete("/api/v1/tags/:tagId", userMiddleware, async (req: Request, res: Response) => {
     const { tagId } = req.params;
-
     try {
-        const userId = req.userId;
-
-        // Delete the tag
-        const result = await TagModel.findOneAndDelete({
-            _id: tagId,
-            userId
-        });
-
-        if (!result) {
-            return res.status(404).json({ message: "Tag not found" });
-        }
-
-        // Remove this tag from all content that references it
-        await ContentModel.updateMany(
-            { userId },
-            { $pull: { tags: tagId } }
-        );
-
+        const [deleted] = await db.delete(schema.tags)
+            .where(and(eq(schema.tags.id, tagId), eq(schema.tags.userId, req.userId))).returning();
+        if (!deleted) return res.status(404).json({ message: "Tag not found" });
         res.json({ message: "Tag deleted successfully" });
     } catch (error: any) {
         res.status(500).json({ message: "Failed to delete tag" });
     }
 });
 
-// Update tags on existing content
 app.put("/api/v1/content/:contentId/tags", userMiddleware, async (req: Request, res: Response) => {
     const { contentId } = req.params;
     const { tags } = req.body;
-
-    if (!Array.isArray(tags)) {
-        return res.status(400).json({ message: "Tags must be an array" });
-    }
+    if (!Array.isArray(tags)) return res.status(400).json({ message: "Tags must be an array" });
 
     try {
-        const userId = req.userId;
+        const [content] = await db.select().from(schema.contents)
+            .where(and(eq(schema.contents.id, contentId), eq(schema.contents.userId, req.userId))).limit(1);
+        if (!content) return res.status(404).json({ message: "Content not found" });
 
-        // Verify content belongs to user
-        const content = await ContentModel.findOne({ _id: contentId, userId });
-        if (!content) {
-            return res.status(404).json({ message: "Content not found" });
-        }
-
-        // Verify all tags belong to this user
-        let validTagIds: mongoose.Types.ObjectId[] = [];
+        let validTags: (typeof schema.tags.$inferSelect)[] = [];
         if (tags.length > 0) {
-            const userTags = await TagModel.find({
-                _id: { $in: tags },
-                userId
-            });
-            validTagIds = userTags.map(t => t._id);
+            validTags = await db.select().from(schema.tags)
+                .where(and(inArray(schema.tags.id, tags), eq(schema.tags.userId, req.userId)));
         }
 
-        (content.tags as any) = validTagIds;
-        await content.save();
-
-        res.json({ message: "Tags updated successfully", content });
+        await db.delete(schema.contentTags).where(eq(schema.contentTags.contentId, contentId));
+        if (validTags.length > 0) {
+            await db.insert(schema.contentTags).values(
+                validTags.map(t => ({ contentId, tagId: t.id }))
+            );
+        }
+        res.json({ message: "Tags updated successfully" });
     } catch (error: any) {
         res.status(500).json({ message: "Failed to update tags" });
     }
 });
 
-app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
+// ========== BRAIN SHARING ENDPOINTS ==========
 
-    const share = req.body.share ;
-    if(share){
-        const existinglink  = await LinkModel.findOne({
-            userId: req.userId
-        });
-        if(existinglink){
-            res.json ({
-                hash: existinglink.hash
-            })
-            return;
-        }
-        const hash = random(10)
-        await LinkModel.create({
-            userId: req.userId,
-            hash: hash
-        })
+app.post("/api/v1/brain/share", userMiddleware, async (req: Request, res: Response) => {
+    const share = req.body.share;
+    if (share) {
+        const [existingLink] = await db.select().from(schema.shareLinks)
+            .where(eq(schema.shareLinks.userId, req.userId)).limit(1);
+        if (existingLink) return res.json({ hash: existingLink.hash });
 
-        res.json ({
-            hash: hash
-        });
-        return;
-
-    }else{
-        await LinkModel.deleteOne({
-            userId: req.userId
-        });
-        res.json({
-            message : "removed link"
-        });
-        return;
+        const hash = crypto.randomBytes(5).toString('hex');
+        await db.insert(schema.shareLinks).values({ hash, userId: req.userId });
+        return res.json({ hash });
+    } else {
+        await db.delete(schema.shareLinks).where(eq(schema.shareLinks.userId, req.userId));
+        return res.json({ message: "removed link" });
     }
-
-
 });
 
-app.get("/api/v1/brain/:shareLink", async (req,res) =>{
-
+app.get("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
     const hash = req.params.shareLink;
+    const [link] = await db.select().from(schema.shareLinks)
+        .where(eq(schema.shareLinks.hash, hash)).limit(1);
+    if (!link) return res.status(411).json({ message: "incorrect input" });
 
-    const link = await LinkModel.findOne({
-        hash
-    });
+    const sharedContent = await db.select({
+        id: schema.contents.id,
+        title: schema.contents.title,
+        link: schema.contents.link,
+        type: schema.contents.type,
+        contentId: schema.contents.contentId,
+    }).from(schema.contents)
+        .where(eq(schema.contents.userId, link.userId))
+        .orderBy(schema.contents.createdAt);
 
-    if (!link){
-        res.status(411).json({
-            message: "incorrect input"
-        })
-        return ;
-    }
+    const [user] = await db.select({ username: schema.users.username })
+        .from(schema.users).where(eq(schema.users.id, link.userId)).limit(1);
+    if (!user) return res.status(411).json({ message: "user not found, error should ideally not happen" });
 
-    const content  = await ContentModel.find({
-        userId: link.userId
-    })
-    const user  = await UserModel.findById(link.userId);
-
-    if(!user){
-        res.status(411).json({
-            message: " user not found , error should ideally not happen"
-        })
-        return;
-
-    }
-    res.json ({
+    res.json({
         username: user.username,
-        content : content
-    })
-
+        content: sharedContent.map(c => ({ _id: c.id, ...c })),
+    });
 });
 
-// Get current user profile
-app.get("/api/v1/me", userMiddleware, async (req: Request, res: Response) => {
-    try {
-        const userId = req.userId;
-
-        const user = await UserModel.findById(userId).select('-password -googleId');
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.json({
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                profilePicture: user.profilePicture,
-                authProvider: user.authProvider
-            }
-        });
-    } catch (error: any) {
-        res.status(500).json({ message: "Error fetching user profile" });
-    }
-});
-
+// ========== SERVER BOOT ==========
 
 async function main() {
-    await connectDB();
+    if (!process.env.DATABASE_URL) {
+        logger.fatal('FATAL: DATABASE_URL environment variable is not set');
+        process.exit(1);
+    }
     app.listen(PORT, () => {
         logger.info({ port: PORT }, 'Server running');
     });
