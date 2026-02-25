@@ -4,90 +4,153 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Brainly is a "second brain" application - a personal knowledge management tool. It consists of:
-- **Brainly/** - Express.js + TypeScript backend with MongoDB
-- **brainly-frontend/** - React 19 + TypeScript + Vite frontend with Tailwind CSS v4
+Brainly is a "second brain" application — a personal knowledge management tool. This is the **backend** (Express.js + TypeScript).
+
+**Database:** PostgreSQL + Drizzle ORM + pgai (migrated from MongoDB in Phase 0)
+**AI Layer:** Vercel AI SDK (provider-agnostic: OpenAI / Anthropic)
 
 ## Common Commands
 
-### Backend (Brainly/)
+### Backend
+
 ```bash
-cd Brainly
-npm run build      # Compile TypeScript to dist/
-npm run start      # Run compiled server (dist/index.js)
-npm run dev        # Build and start (npm run build && npm run start)
+npm run dev              # Build TypeScript + start server
+npm run build            # Compile TypeScript to dist/
+npm run start            # Run compiled server
+
+npm run db:generate      # Generate new Drizzle migration from schema changes
+npm run db:migrate       # Apply pending migrations to database
+npm run setup:pgai       # Install pgai extension + create content vectorizer (run once)
+npm run migrate:data     # Migrate data from MongoDB to PostgreSQL (run once)
 ```
 
-### Frontend (brainly-frontend/)
+### Docker (local dev)
+
 ```bash
-cd brainly-frontend
-npm run dev        # Start Vite dev server with HMR
-npm run build      # TypeScript check + Vite production build
-npm run lint       # Run ESLint
-npm run preview    # Preview production build
+docker compose up -d db                  # Start PostgreSQL + pgai
+docker compose up -d                     # Start all services (DB + vectorizer worker)
+docker compose down                      # Stop all services
+docker compose down -v                   # Stop + delete volumes (fresh start)
 ```
 
 ## Architecture
 
-### Backend Structure
-- `src/index.ts` - Express server with all API routes
-- `src/db.ts` - Mongoose schemas (User, Content, Link, Tag) and MongoDB connection
-- `src/middleware.ts` - JWT authentication middleware (`userMiddleware`)
-- `src/providers/` - Content provider system for URL parsing and validation
-- `src/utils.ts` - Utility functions
+### Key Files
 
-**API Endpoints:**
-- `POST /api/v1/signup` - User registration (bcrypt password hashing)
-- `POST /api/v1/signin` - User login (returns JWT)
-- `POST /api/v1/content` - Create content (protected, auto-detects type from URL)
-- `POST /api/v1/content/validate` - Validate URL and get preview info (protected)
-- `GET /api/v1/content` - Get user's content (protected)
-- `DELETE /api/v1/content` - Delete content by ID (protected)
-- `GET /api/v1/content/providers` - List supported content providers
-- `POST /api/v1/brain/share` - Create/delete shareable link (protected)
-- `GET /api/v1/brain/:shareLink` - Get shared brain content (public)
+| File | Purpose |
+|------|---------|
+| `src/index.ts` | Express server — all API routes (Drizzle queries) |
+| `src/db/schema.ts` | Drizzle schema — all table definitions |
+| `src/db/relations.ts` | Drizzle relations — for relational queries |
+| `src/db/index.ts` | Database connection (pg Pool + Drizzle) |
+| `src/db/transforms.ts` | `withMongoId()` — converts `id` → `_id` for frontend compat |
+| `src/db/setup-pgai.ts` | pgai vectorizer setup script |
+| `src/middleware.ts` | JWT authentication middleware |
+| `src/config.ts` | Feature flags + API key config |
+| `src/providers/` | URL parsing (YouTube, Twitter, GitHub, etc.) |
+| `src/extractors/` | Background metadata extraction |
+| `src/services/enrichment.service.ts` | Background enrichment polling service |
+| `src/ai/shared/llm-client.ts` | Vercel AI SDK wrapper (provider-agnostic) |
+| `src/ai/shared/types.ts` | Shared AI module types |
+| `scripts/migrate-mongo-to-pg.ts` | One-time MongoDB → PostgreSQL data migration |
 
-**Database Models:**
-- `User` - username (unique), password (hashed)
-- `Content` - title, link, contentId, type, tags, userId, metadata
-- `Tag` - name, userId (user-specific tags)
-- `Link` - hash, userId (ref to User) - for shareable brain links
+### API Endpoints
+
+**Auth:**
+- `POST /api/v1/signup` — Register (bcrypt, Drizzle insert)
+- `POST /api/v1/signin` — Login (returns JWT)
+- `POST /api/v1/auth/google` — Google OAuth
+- `GET /api/v1/me` — Current user profile
+
+**Content:**
+- `POST /api/v1/content` — Create (auto-detects type, triggers enrichment)
+- `GET /api/v1/content` — List user's content (with populated tags)
+- `DELETE /api/v1/content` — Delete by ID
+- `POST /api/v1/content/validate` — Validate URL, get preview info
+- `GET /api/v1/content/providers` — List supported providers
+- `PUT /api/v1/content/:id/tags` — Update tags on content
+
+**Tags:**
+- `GET /api/v1/tags` — List user's tags
+- `POST /api/v1/tags` — Create tag
+- `DELETE /api/v1/tags/:id` — Delete tag (cascade removes from content)
+
+**Brain Sharing:**
+- `POST /api/v1/brain/share` — Create/delete share link
+- `GET /api/v1/brain/:shareLink` — Public shared brain view
+
+### Database Schema (PostgreSQL + Drizzle)
+
+Tables: `users`, `tags`, `contents`, `content_tags` (junction), `share_links`
+
+**Key design decision:** The frontend uses `_id` (MongoDB convention). The backend returns `_id` by applying `withMongoId()` from `src/db/transforms.ts` to all response objects.
+
+**pgai vectorizer:** `contents.full_text` is auto-embedded by the vectorizer worker service. No application code needed — add content, the worker generates embeddings automatically.
 
 ### Content Provider System
 
-The app uses a **plugin-based provider architecture** for URL handling. Each content type (YouTube, Twitter, generic links) is a separate provider module.
+Plugin-based URL parsing. Each provider implements `canHandle`, `extractId`, `getEmbedUrl`, `getCanonicalUrl`.
 
-**Provider locations:**
-- Backend: `Brainly/src/providers/`
-- Frontend: `brainly-frontend/src/providers/`
+- Providers run on **both** frontend and backend
+- Backend: `src/providers/` — validation, type detection
+- Frontend: `src/providers/` — embed URL generation, display
 
-**Current providers:**
-- `youtube` - YouTube videos (watch, shorts, live, embed, youtu.be)
-- `twitter` - Twitter/X posts (twitter.com, x.com)
-- `link` - Generic fallback for any URL
+Supported: YouTube, Twitter/X, Instagram, GitHub, Medium, Notion, Generic (fallback)
 
-**Adding new providers:** See `docs/provider-system/ADDING_NEW_PROVIDER.md` for complete instructions on adding support for new content types (Spotify, Notion, Reddit, etc.).
+### Content Enrichment System
 
-### Frontend Structure
-- `src/App.tsx` - React Router setup with routes for /, /signup, /signin, /dashboard
-- `src/pages/` - Page components (Landing, Signup, Signin, Dashboard)
-- `src/components/ui/` - Reusable UI components (Button, Card, Input, Sidebar, CreateContentModal)
-- `src/icons/` - Icon components
-- `src/index.css` - Tailwind CSS styles
+Background service (`src/services/enrichment.service.ts`) polls for `enrichmentStatus='pending'` content and runs extractors asynchronously.
 
-**Routing:**
-- `/` - Landing page
-- `/signup` - User registration
-- `/signin` - User login
-- `/dashboard` - Main app interface (protected)
+- **Fair batching:** Uses `DISTINCT ON (user_id)` SQL to pick one item per user
+- **Atomic claims:** `UPDATE ... WHERE status='pending'` prevents duplicate processing
+- **Retry logic:** 3 attempts, 60s delay between retries
+- **Extractors:** YouTube (Innertube API), Twitter (oEmbed), GitHub (REST API), Medium, Instagram, Generic
 
+### AI Module Structure (Phase 1+)
+
+```
+src/ai/
+├── shared/
+│   ├── llm-client.ts   # Provider-agnostic LLM via Vercel AI SDK
+│   └── types.ts        # Shared AI types
+├── summarizer/         # Phase 1 — auto-summarization
+├── search/             # Phase 1 — semantic search via pgai
+├── tagger/             # Phase 1 — auto-tagging
+└── rag/                # Phase 2 — chat with your brain
+```
+
+Each module is standalone and portable — no Brainly-specific dependencies.
 
 ## Environment Variables
 
-### Backend (Brainly/.env)
-- `MONGO_URI` - MongoDB connection string (required)
-- `PORT` - Server port (default: 3000)
+```env
+# Required
+DATABASE_URL=postgres://brainly:brainly_dev@localhost:5432/brainly
+JWT_SECRET=your-secret
+PORT=5000
+CORS_ORIGIN=http://localhost:5173
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+
+# Enrichment API keys (optional — extractors degrade gracefully)
+YOUTUBE_API_KEY=
+GITHUB_TOKEN=
+TWITTER_BEARER_TOKEN=
+
+# AI
+OPENAI_API_KEY=your-openai-key
+LLM_PROVIDER=openai             # or: anthropic
+ANTHROPIC_API_KEY=              # if using anthropic
+
+# Legacy (only needed for data migration)
+MONGO_URI=mongodb+srv://...
+```
 
 ## Key Technologies
-- Backend: Express 4, Mongoose 8, JWT, bcrypt
-- Frontend: React 19, React Router 7, Tailwind CSS 4, Vite 7
+
+- Backend: Express 4, TypeScript, PostgreSQL, Drizzle ORM, pgai
+- Auth: JWT (7d expiry), bcrypt, Google OAuth
+- AI: Vercel AI SDK, pgai (vector embeddings), OpenAI / Anthropic
+- Security: Helmet, express-rate-limit, Zod validation
+- Logging: Pino structured logging
