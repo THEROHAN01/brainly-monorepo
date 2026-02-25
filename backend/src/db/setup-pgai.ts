@@ -28,26 +28,24 @@ async function setupPgai() {
         // Create vectorizer for content full_text.
         // The vectorizer worker auto-chunks, formats, and embeds content
         // whenever full_text is inserted or updated — no app code needed.
+        // if_not_exists => true makes this idempotent (safe to re-run).
         await client.query(`
             SELECT ai.create_vectorizer(
                 'contents'::regclass,
-                loading    => ai.loading_column('full_text'),
-                chunking   => ai.chunking_recursive_character_text_splitter(
-                                chunk_size => 1000, chunk_overlap => 200),
-                formatting => ai.formatting_python_template(
-                                'Title: $title' || E'\\n' || 'Type: $type' || E'\\n\\n' || '$chunk'),
-                embedding  => ai.embedding_openai('text-embedding-3-small', 1536)
+                loading       => ai.loading_column('full_text'),
+                chunking      => ai.chunking_recursive_character_text_splitter(
+                                    chunk_size => 1000, chunk_overlap => 200),
+                formatting    => ai.formatting_python_template(
+                                    'Title: $title' || E'\\n' || 'Type: $type' || E'\\n\\n' || '$chunk'),
+                embedding     => ai.embedding_openai('text-embedding-3-small', 1536),
+                if_not_exists => true
             );
         `);
         console.log("✓ Vectorizer created for contents.full_text");
         console.log("  Embeddings will auto-sync via the vectorizer worker Docker service.");
         console.log("  Run: docker compose up -d vectorizer-worker");
     } catch (err: any) {
-        if (err.message?.includes("already exists")) {
-            console.log("  Vectorizer already exists, skipping");
-        } else {
-            throw err;
-        }
+        throw err;
     } finally {
         await client.end();
     }
