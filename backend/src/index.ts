@@ -106,21 +106,25 @@ app.post("/api/v1/signin", authLimiter, async (req: Request, res: Response) => {
     }
     const { username, password } = result.data;
 
-    const [existingUser] = await db.select().from(schema.users)
-        .where(eq(schema.users.username, username)).limit(1);
-    if (!existingUser) {
-        return res.status(400).json({ message: "Invalid credentials" });
-    }
-    if (!existingUser.password) {
-        return res.status(400).json({ message: "This account uses Google sign-in. Please use Google to log in." });
-    }
+    try {
+        const [existingUser] = await db.select().from(schema.users)
+            .where(eq(schema.users.username, username)).limit(1);
+        if (!existingUser) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+        if (!existingUser.password) {
+            return res.status(400).json({ message: "This account uses Google sign-in. Please use Google to log in." });
+        }
 
-    const isMatch = await bcrypt.compare(password, existingUser.password);
-    if (isMatch) {
-        const token = jwt.sign({ id: existingUser.id }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token });
-    } else {
-        res.status(403).json({ message: "Incorrect Credentials" });
+        const isMatch = await bcrypt.compare(password, existingUser.password);
+        if (isMatch) {
+            const token = jwt.sign({ id: existingUser.id }, JWT_SECRET, { expiresIn: '7d' });
+            res.json({ token });
+        } else {
+            res.status(403).json({ message: "Incorrect Credentials" });
+        }
+    } catch (error: any) {
+        res.status(500).json({ message: "Authentication failed" });
     }
 });
 
@@ -339,16 +343,15 @@ app.post("/api/v1/tags", userMiddleware, async (req: Request, res: Response) => 
         return res.status(400).json({ message: "Tag name must be 1-50 characters" });
 
     try {
-        const [existingTag] = await db.select().from(schema.tags)
-            .where(and(eq(schema.tags.name, trimmedName), eq(schema.tags.userId, req.userId))).limit(1);
-
-        if (existingTag)
-            return res.status(409).json({ message: "Tag already exists", tag: withMongoId(existingTag) });
-
         const [tag] = await db.insert(schema.tags)
             .values({ name: trimmedName, userId: req.userId }).returning();
         res.status(201).json({ message: "Tag created successfully", tag: withMongoId(tag) });
     } catch (error: any) {
+        if (error.code === '23505') {
+            const [existingTag] = await db.select().from(schema.tags)
+                .where(and(eq(schema.tags.name, trimmedName), eq(schema.tags.userId, req.userId))).limit(1);
+            return res.status(409).json({ message: "Tag already exists", tag: existingTag ? withMongoId(existingTag) : undefined });
+        }
         res.status(500).json({ message: "Failed to create tag" });
     }
 });
@@ -381,12 +384,14 @@ app.put("/api/v1/content/:contentId/tags", userMiddleware, async (req: Request, 
                 .where(and(inArray(schema.tags.id, tags), eq(schema.tags.userId, req.userId)));
         }
 
-        await db.delete(schema.contentTags).where(eq(schema.contentTags.contentId, contentId));
-        if (validTags.length > 0) {
-            await db.insert(schema.contentTags).values(
-                validTags.map(t => ({ contentId, tagId: t.id }))
-            );
-        }
+        await db.transaction(async (tx) => {
+            await tx.delete(schema.contentTags).where(eq(schema.contentTags.contentId, contentId));
+            if (validTags.length > 0) {
+                await tx.insert(schema.contentTags).values(
+                    validTags.map(t => ({ contentId, tagId: t.id }))
+                );
+            }
+        });
         res.json({ message: "Tags updated successfully" });
     } catch (error: any) {
         res.status(500).json({ message: "Failed to update tags" });
@@ -404,8 +409,18 @@ app.post("/api/v1/brain/share", userMiddleware, async (req: Request, res: Respon
             if (existingLink) return res.json({ hash: existingLink.hash });
 
             const hash = crypto.randomBytes(5).toString('hex');
-            await db.insert(schema.shareLinks).values({ hash, userId: req.userId });
-            return res.json({ hash });
+            try {
+                await db.insert(schema.shareLinks).values({ hash, userId: req.userId });
+                return res.json({ hash });
+            } catch (insertErr: any) {
+                if (insertErr.code === '23505') {
+                    // Race: another request created the link — re-fetch
+                    const [existing] = await db.select().from(schema.shareLinks)
+                        .where(eq(schema.shareLinks.userId, req.userId)).limit(1);
+                    return res.json({ hash: existing?.hash });
+                }
+                throw insertErr;
+            }
         } else {
             await db.delete(schema.shareLinks).where(eq(schema.shareLinks.userId, req.userId));
             return res.json({ message: "removed link" });
@@ -420,7 +435,7 @@ app.get("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
         const hash = req.params.shareLink;
         const [link] = await db.select().from(schema.shareLinks)
             .where(eq(schema.shareLinks.hash, hash)).limit(1);
-        if (!link) return res.status(411).json({ message: "incorrect input" });
+        if (!link) return res.status(404).json({ message: "Share link not found" });
 
         const sharedContent = await db.select({
             id: schema.contents.id,
@@ -434,7 +449,7 @@ app.get("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
 
         const [user] = await db.select({ username: schema.users.username })
             .from(schema.users).where(eq(schema.users.id, link.userId)).limit(1);
-        if (!user) return res.status(411).json({ message: "user not found, error should ideally not happen" });
+        if (!user) return res.status(404).json({ message: "User not found" });
 
         res.json({
             username: user.username,

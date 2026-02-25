@@ -35,7 +35,7 @@ export async function startEnrichmentService(): Promise<void> {
     // Recovery: reset any documents stuck in 'processing' from a previous crash
     const staleResult = await db
         .update(schema.contents)
-        .set({ enrichmentStatus: 'pending', updatedAt: new Date() })
+        .set({ enrichmentStatus: 'pending' })
         .where(eq(schema.contents.enrichmentStatus, 'processing'))
         .returning();
 
@@ -140,7 +140,7 @@ async function processContent(content: {
     // Check if extractor is configured for this type
     if (!isExtractorConfigured(type)) {
         await db.update(schema.contents)
-            .set({ enrichmentStatus: 'skipped', enrichmentError: `No configured extractor for type: ${type}`, updatedAt: new Date() })
+            .set({ enrichmentStatus: 'skipped', enrichmentError: `No configured extractor for type: ${type}` })
             .where(eq(schema.contents.id, id));
         contentLog.info('Skipped — no configured extractor');
         return;
@@ -149,7 +149,7 @@ async function processContent(content: {
     // Atomic claim: only proceed if we successfully transition from pending → processing
     const [claimed] = await db
         .update(schema.contents)
-        .set({ enrichmentStatus: 'processing', updatedAt: new Date() })
+        .set({ enrichmentStatus: 'processing' })
         .where(and(eq(schema.contents.id, id), eq(schema.contents.enrichmentStatus, 'pending')))
         .returning();
 
@@ -165,7 +165,6 @@ async function processContent(content: {
             enrichmentStatus: 'enriched',
             enrichmentError: null,
             enrichedAt: new Date(),
-            updatedAt: new Date(),
             metaTitle: metadata.title ?? null,
             metaDescription: metadata.description ?? null,
             metaAuthor: metadata.author ?? null,
@@ -191,7 +190,6 @@ async function processContent(content: {
             enrichmentStatus: maxedOut ? 'failed' : 'pending',
             enrichmentError: (err as Error).message,
             enrichmentRetries: retries,
-            updatedAt: new Date(),
         }).where(eq(schema.contents.id, id));
 
         contentLog.error(
