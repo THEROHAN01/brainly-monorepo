@@ -1,0 +1,28 @@
+services:
+  db:
+    image: timescale/timescaledb-ha:pg17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brainly_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-brainly}
+      POSTGRES_DB: ${POSTGRES_DB:-brainly}
+    volumes:
+      - pgdata:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brainly"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  vectorizer-worker:
+    image: timescale/pgai-vectorizer-worker:latest
+    environment:
+      PGAI_VECTORIZER_WORKER_DB_URL: postgres://${POSTGRES_USER:-brainly}:${POSTGRES_PASSWORD:-brainly_dev}@db:5432/${POSTGRES_DB:-brainly}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
