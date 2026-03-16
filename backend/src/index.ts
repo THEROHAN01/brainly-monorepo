@@ -362,14 +362,22 @@ app.get("/api/v1/content/providers", (req: Request, res: Response) => {
 app.get("/api/v1/content" ,userMiddleware, async (req,res) =>{
 
     const userId = req.userId;
-    const content = await ContentModel.find({
-        userId: userId
-    })
-    .populate("userId", "username")
-    .populate("tags", "name");
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 1000);
+    const skip = Math.max(parseInt(req.query.skip as string) || 0, 0);
+
+    const [content, total] = await Promise.all([
+        ContentModel.find({ userId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("userId", "username")
+            .populate("tags", "name"),
+        ContentModel.countDocuments({ userId })
+    ]);
 
     res.json({
-        content
+        content,
+        pagination: { total, limit, skip, hasMore: skip + limit < total }
     });
 });
 
@@ -568,10 +576,17 @@ app.get("/api/v1/brain/:shareLink", async (req,res) =>{
             return ;
         }
 
-        const content  = await ContentModel.find({
-            userId: link.userId
-        })
-        const user  = await UserModel.findById(link.userId);
+        const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 1000);
+        const skip = Math.max(parseInt(req.query.skip as string) || 0, 0);
+
+        const [content, total, user] = await Promise.all([
+            ContentModel.find({ userId: link.userId })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            ContentModel.countDocuments({ userId: link.userId }),
+            UserModel.findById(link.userId)
+        ]);
 
         if(!user){
             res.status(404).json({
@@ -582,7 +597,8 @@ app.get("/api/v1/brain/:shareLink", async (req,res) =>{
 
         res.json ({
             username: user.username,
-            content : content
+            content,
+            pagination: { total, limit, skip, hasMore: skip + limit < total }
         })
     } catch (error) {
         console.error("Share link error:", error);
