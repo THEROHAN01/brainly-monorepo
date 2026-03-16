@@ -554,37 +554,40 @@ app.post("/api/v1/brain/share",userMiddleware,async(req,res) => {
 });
 
 app.get("/api/v1/brain/:shareLink", async (req,res) =>{
+    try {
+        const hash = req.params.shareLink;
 
-    const hash = req.params.shareLink;
+        const link = await LinkModel.findOne({
+            hash
+        });
 
-    const link = await LinkModel.findOne({
-        hash
-    });
+        if (!link){
+            res.status(404).json({
+                message: "Share link not found"
+            })
+            return ;
+        }
 
-    if (!link){
-        res.status(411).json({
-            message: "incorrect input"
+        const content  = await ContentModel.find({
+            userId: link.userId
         })
-        return ;
-    }
+        const user  = await UserModel.findById(link.userId);
 
-    const content  = await ContentModel.find({
-        userId: link.userId
-    })
-    const user  = await UserModel.findById(link.userId);
+        if(!user){
+            res.status(404).json({
+                message: "User not found"
+            })
+            return;
+        }
 
-    if(!user){
-        res.status(411).json({
-            message: " user not found , error should ideally not happen"
+        res.json ({
+            username: user.username,
+            content : content
         })
-        return;
-
+    } catch (error) {
+        console.error("Share link error:", error);
+        res.status(500).json({ message: "Failed to load shared brain" });
     }
-    res.json ({
-        username: user.username,
-        content : content
-    })
-
 });
 
 // Get current user profile
