@@ -1,0 +1,11 @@
+# Functionality Fixes Log
+
+Fixes for issues that break or degrade app functionality, applied on 2026-03-16.
+
+| # | Issue | Severity | Files Changed | Commit | Description |
+|---|-------|----------|---------------|--------|-------------|
+| 1 | Public share route has no try-catch | **Critical** | `backend/src/index.ts` | `d1355cd` | The `GET /brain/:shareLink` endpoint had no error handling. Any DB error caused an unhandled promise rejection that crashed the Express process. Added try-catch and fixed incorrect 411 status codes to proper 404 responses. |
+| 2 | No pagination on content retrieval | **High** | `backend/src/index.ts` | `79810f3` | `GET /content` and `GET /brain/:shareLink` returned all items with no limit. As content grows, this causes request timeouts and browser freezes. Added `limit`/`skip` query params (default 100, max 1000), sorted by newest first, with total count and `hasMore` flag. |
+| 3 | Expired JWT token leaves broken dashboard | **High** | `frontend/src/lib/api.ts` (new), `frontend/src/hooks/useContents.tsx`, `frontend/src/hooks/useUser.ts`, `frontend/src/hooks/useTags.tsx`, `frontend/src/pages/dashboard.tsx` | `90cdbed` | After the 7-day JWT expiry, all API calls returned 401 but the frontend never detected it — users saw empty content or generic errors with no way to recover. Created a centralized Axios instance with a response interceptor that clears the token and redirects to `/signin` on 401. |
+| 4 | Notion provider registered but has no extractor | **Medium** | `backend/src/config.ts` | `10373bd` | The Notion content provider was enabled but no corresponding extractor existed. Saving a Notion URL would accept it, then the enrichment service would pick it up and fail — leaving content permanently stuck in `pending` status. Disabled the provider flag until an extractor is implemented. |
+| 5 | No double-submit protection on actions | **Medium** | `frontend/src/pages/dashboard.tsx`, `frontend/src/components/ui/ConfirmDialog.tsx` | `a1c0f58` | Delete, share, and content creation had no loading guards. Rapid clicks fired multiple API calls, creating duplicate entries or triggering redundant deletes (with error toasts on the second call). Added `deleting`/`sharing` state guards and loading indicators on the confirm button. |
