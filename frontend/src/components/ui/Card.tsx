@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ShareIcon } from "../../icons/ShareIcon";
 import { TrashIcon } from "../../icons/TrashIcon";
 import { CopyIcon } from "../../icons/CopyIcon";
@@ -31,8 +31,6 @@ interface CardProps {
 }
 
 export function Card({ id, title, link, type, contentId, tags, onDelete }: CardProps) {
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
     const twitterRef = useRef<HTMLDivElement>(null);
 
     // Get provider info for this content type
@@ -53,18 +51,8 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
         }
     }, [type, link]);
 
-    const handleDelete = async () => {
-        if (!onDelete) return;
-
-        setIsDeleting(true);
-        try {
-            await onDelete(id);
-        } catch {
-            // Delete failed silently - error already handled in dashboard
-        } finally {
-            setIsDeleting(false);
-            setShowConfirm(false);
-        }
+    const handleDelete = () => {
+        onDelete?.(id);
     };
 
     const handleCopyLink = async () => {
@@ -78,28 +66,6 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
 
     return (
         <div className="relative">
-            {/* Delete Confirmation Overlay */}
-            {showConfirm && (
-                <div className="absolute inset-0 bg-brand-bg/90 rounded-md z-10 flex flex-col items-center justify-center p-4" role="alertdialog" aria-label="Confirm deletion">
-                    <p className="text-brand-text text-center mb-4">Delete this content?</p>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="px-3 py-1.5 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50"
-                        >
-                            {isDeleting ? "Deleting..." : "Delete"}
-                        </button>
-                        <button
-                            onClick={() => setShowConfirm(false)}
-                            disabled={isDeleting}
-                            className="px-3 py-1.5 bg-brand-surface text-brand-text rounded text-sm hover:bg-brand-surface-dark"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
 
             <div className="p-4 bg-brand-bg rounded-md border-brand-surface border min-h-48">
                 <div className="flex justify-between items-center">
@@ -128,7 +94,7 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
                         </a>
                         {onDelete && (
                             <button
-                                onClick={() => setShowConfirm(true)}
+                                onClick={handleDelete}
                                 className="text-brand-text-muted hover:text-red-400 transition-colors cursor-pointer"
                                 aria-label="Delete content"
                             >
