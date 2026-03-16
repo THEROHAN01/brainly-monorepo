@@ -63,7 +63,7 @@ export function Signin() {
                     <div className="space-y-5">
                         {/* Error Message */}
                         {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                                 <p className="text-red-400 text-sm text-center">{error}</p>
                             </div>
                         )}

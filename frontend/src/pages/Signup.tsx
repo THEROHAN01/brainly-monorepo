@@ -68,14 +68,14 @@ export function Signup() {
                     <div className="space-y-5">
                         {/* Success Message */}
                         {success && (
-                            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                            <div role="status" className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                                 <p className="text-green-400 text-sm text-center">Account created successfully! Redirecting to sign in...</p>
                             </div>
                         )}
 
                         {/* Error Message */}
                         {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                                 <p className="text-red-400 text-sm text-center">{error}</p>
                             </div>
                         )}
