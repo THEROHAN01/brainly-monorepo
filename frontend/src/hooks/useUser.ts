@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { BACKEND_URL } from "../config";
-import axios from "axios";
-import { getToken, removeToken } from "../lib/auth";
+import api from "../lib/api";
+import { removeToken } from "../lib/auth";
 
 export interface User {
     id: string;
@@ -16,22 +15,12 @@ export function useUser() {
     const [loading, setLoading] = useState(true);
 
     const fetchUser = useCallback(async () => {
-        const token = getToken();
-
-        if (!token) {
-            setLoading(false);
-            return;
-        }
-
         try {
             setLoading(true);
-            const response = await axios.get(`${BACKEND_URL}/api/v1/me`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+            const response = await api.get("/api/v1/me");
             setUser(response.data.user);
         } catch {
+            // 401 is handled by the api interceptor (redirects to signin)
             setUser(null);
         } finally {
             setLoading(false);

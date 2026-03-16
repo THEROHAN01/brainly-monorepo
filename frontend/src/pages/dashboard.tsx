@@ -13,10 +13,8 @@ import { Sidebar, type FilterType } from '../components/ui/Sidebar'
 import { useContents } from '../hooks/useContents'
 import { useUser } from '../hooks/useUser'
 import { useTags } from '../hooks/useTags'
-import { BACKEND_URL } from '../config'
-import axios from 'axios';
+import api from '../lib/api';
 import { toast } from 'sonner';
-import { getToken } from '../lib/auth';
 
 type SortOption = "date-desc" | "date-asc" | "title-asc" | "title-desc" | "type";
 
@@ -33,7 +31,6 @@ export function Dashboard() {
   const { contents, loading, error, refetch } = useContents();
   const { user, loading: userLoading, logout } = useUser();
   const { tags: availableTags, createTag } = useTags();
-  const token = getToken();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
@@ -68,10 +65,7 @@ export function Dashboard() {
     if (!deleteConfirm.contentId) return;
 
     try {
-      await axios.delete(`${BACKEND_URL}/api/v1/content`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
+      await api.delete("/api/v1/content", {
         data: { contentId: deleteConfirm.contentId }
       });
       toast.success("Content deleted successfully");
@@ -204,12 +198,8 @@ export function Dashboard() {
                 <Button
                   onClick={async () => {
                     try {
-                      const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
+                      const response = await api.post("/api/v1/brain/share", {
                         share: true
-                      }, {
-                        headers: {
-                          "Authorization": `Bearer ${token}`
-                        }
                       });
                       const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
                       await navigator.clipboard.writeText(shareUrl);
@@ -226,12 +216,8 @@ export function Dashboard() {
                 <Button
                   onClick={async () => {
                     try {
-                      const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
+                      const response = await api.post("/api/v1/brain/share", {
                         share: true
-                      }, {
-                        headers: {
-                          "Authorization": `Bearer ${token}`
-                        }
                       });
                       const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
                       await navigator.clipboard.writeText(shareUrl);

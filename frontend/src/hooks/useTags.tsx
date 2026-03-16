@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { BACKEND_URL } from "../config";
+import api from "../lib/api";
 import axios from "axios";
 import type { Tag } from "../types/tag";
-import { getToken } from "../lib/auth";
 
 export function useTags() {
     const [tags, setTags] = useState<Tag[]>([]);
@@ -10,24 +9,15 @@ export function useTags() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchTags = useCallback(async () => {
-        const token = getToken();
-        if (!token) {
-            setLoading(false);
-            setError("No authentication token found");
-            return;
-        }
-
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`${BACKEND_URL}/api/v1/tags`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
+            const response = await api.get("/api/v1/tags");
             setTags(response.data.tags || []);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
+            if (axios.isAxiosError(err) && err.response?.status !== 401) {
                 setError(err.response?.data?.message || "Failed to fetch tags");
-            } else {
+            } else if (!axios.isAxiosError(err)) {
                 setError("Failed to fetch tags");
             }
             setTags([]);
@@ -37,13 +27,8 @@ export function useTags() {
     }, []);
 
     const createTag = async (name: string): Promise<Tag | null> => {
-        const token = getToken();
         try {
-            const response = await axios.post(
-                `${BACKEND_URL}/api/v1/tags`,
-                { name },
-                { headers: { "Authorization": `Bearer ${token}` } }
-            );
+            const response = await api.post("/api/v1/tags", { name });
             const newTag = response.data.tag;
             setTags(prev => [...prev, newTag].sort((a, b) => a.name.localeCompare(b.name)));
             return newTag;
@@ -57,10 +42,7 @@ export function useTags() {
     };
 
     const deleteTag = async (tagId: string): Promise<void> => {
-        const token = getToken();
-        await axios.delete(`${BACKEND_URL}/api/v1/tags/${tagId}`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
+        await api.delete(`/api/v1/tags/${tagId}`);
         setTags(prev => prev.filter(t => t._id !== tagId));
     };
 
