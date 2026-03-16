@@ -182,8 +182,14 @@ export function Dashboard() {
                   placeholder="Search by title, URL, or tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text placeholder:text-brand-text/40 focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow"
+                  className="w-full pl-10 pr-16 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text placeholder:text-brand-text/40 focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow"
+                  aria-label="Search content"
                 />
+                {!searchQuery && (
+                  <kbd className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-0.5 pointer-events-none select-none px-1.5 py-0.5 text-xs text-brand-text/30 border border-brand-border rounded">
+                    /
+                  </kbd>
+                )}
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
@@ -223,6 +229,7 @@ export function Dashboard() {
                   variant="primary"
                   text="Add Content"
                   startIcon={<PlusIcon size='lg' />}
+                  endIcon={<kbd className="ml-1 px-1.5 py-0.5 text-xs bg-brand-primary-dark/60 rounded opacity-70 font-sans pointer-events-none select-none">⌘K</kbd>}
                   className="hidden sm:inline-flex"
                 />
                 <Button
