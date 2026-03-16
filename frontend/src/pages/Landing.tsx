@@ -648,7 +648,7 @@ export function Landing() {
                     {/* Bottom Bar */}
                     <div className="border-t border-brand-surface mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-brand-text/40 text-sm">
-                            &copy; 2025 Brainly. All rights reserved.
+                            &copy; 2026 Brainly. All rights reserved.
                         </p>
                         <div className="flex items-center gap-6">
                             <a href="#" className="text-brand-text/40 hover:text-brand-primary transition-colors">
