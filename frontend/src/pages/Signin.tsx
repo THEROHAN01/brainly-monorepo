@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
+import { Input, PasswordInput } from "../components/ui/Input";
 import { GoogleSignInButton } from "../components/ui/GoogleSignInButton";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
@@ -77,7 +77,7 @@ export function Signin() {
                         {/* Password Input */}
                         <div className="space-y-2">
                             <label htmlFor="signin-password" className="block text-sm font-semibold text-brand-text/80">Password</label>
-                            <Input id="signin-password" ref={passwordRef} placeholder="Enter your password" type="password" />
+                            <PasswordInput id="signin-password" ref={passwordRef} placeholder="Enter your password" />
                         </div>
 
                         {/* Signin Button */}

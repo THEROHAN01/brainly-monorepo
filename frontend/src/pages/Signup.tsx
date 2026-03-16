@@ -1,6 +1,6 @@
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
+import { Input, PasswordInput } from "../components/ui/Input";
 import { GoogleSignInButton } from "../components/ui/GoogleSignInButton";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
@@ -89,7 +89,7 @@ export function Signup() {
                         {/* Password Input */}
                         <div className="space-y-2">
                             <label htmlFor="signup-password" className="block text-sm font-semibold text-brand-text/80">Password</label>
-                            <Input ref={passwordRef} id="signup-password" placeholder="Create a strong password" type="password" />
+                            <PasswordInput ref={passwordRef} id="signup-password" placeholder="Create a strong password" />
                         </div>
 
                         {/* Signup Button */}
