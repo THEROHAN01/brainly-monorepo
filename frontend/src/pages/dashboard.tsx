@@ -16,6 +16,7 @@ import { useTags } from '../hooks/useTags'
 import { BACKEND_URL } from '../config'
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getToken } from '../lib/auth';
 
 type SortOption = "date-desc" | "date-asc" | "title-asc" | "title-desc" | "type";
 
@@ -32,7 +33,7 @@ export function Dashboard() {
   const { contents, loading, error, refetch } = useContents();
   const { user, loading: userLoading, logout } = useUser();
   const { tags: availableTags, createTag } = useTags();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts

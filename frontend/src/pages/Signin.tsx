@@ -5,6 +5,7 @@ import { GoogleSignInButton } from "../components/ui/GoogleSignInButton";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { setToken } from "../lib/auth";
 
 export function Signin() {
     const usernameRef = useRef<HTMLInputElement>(null);
@@ -30,7 +31,7 @@ export function Signin() {
                 username,
                 password
             });
-            localStorage.setItem("token", response.data.token);
+            setToken(response.data.token);
             navigate("/dashboard");
         } catch (err) {
             if (axios.isAxiosError(err)) {

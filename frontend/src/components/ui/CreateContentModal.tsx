@@ -15,6 +15,7 @@ import {
 } from "./Dialog";
 import { CrossIcon } from "../../icons/CrossIcon";
 import { quickValidateUrl, type ValidationResult } from "../../providers";
+import { getToken } from "../../lib/auth";
 
 interface CreateContentModalProps {
     open: boolean;
@@ -102,7 +103,7 @@ export function CreateContentModal({
         // If client-side validation passes, verify with server for authoritative result
         if (quickResult.valid) {
             setValidating(true);
-            const token = localStorage.getItem("token");
+            const token = getToken();
 
             axios.post(`${BACKEND_URL}/api/v1/content/validate`,
                 { link: debouncedLink },

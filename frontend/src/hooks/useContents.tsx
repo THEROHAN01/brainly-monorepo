@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
+import { getToken } from "../lib/auth";
 import type { Tag } from "../types/tag";
 
 /**
@@ -23,7 +24,7 @@ export function useContents() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchContents = useCallback(async () => {
-        const token = localStorage.getItem("token");
+        const token = getToken();
 
         if (!token) {
             setLoading(false);

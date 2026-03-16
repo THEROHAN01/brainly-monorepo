@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
+import { getToken, removeToken } from "../lib/auth";
 
 export interface User {
     id: string;
@@ -15,7 +16,7 @@ export function useUser() {
     const [loading, setLoading] = useState(true);
 
     const fetchUser = useCallback(async () => {
-        const token = localStorage.getItem("token");
+        const token = getToken();
 
         if (!token) {
             setLoading(false);
@@ -38,7 +39,7 @@ export function useUser() {
     }, []);
 
     const logout = useCallback(() => {
-        localStorage.removeItem("token");
+        removeToken();
         setUser(null);
     }, []);
 

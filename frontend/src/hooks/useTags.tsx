@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
 import type { Tag } from "../types/tag";
+import { getToken } from "../lib/auth";
 
 export function useTags() {
     const [tags, setTags] = useState<Tag[]>([]);
@@ -9,7 +10,7 @@ export function useTags() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchTags = useCallback(async () => {
-        const token = localStorage.getItem("token");
+        const token = getToken();
         if (!token) {
             setLoading(false);
             setError("No authentication token found");
@@ -36,7 +37,7 @@ export function useTags() {
     }, []);
 
     const createTag = async (name: string): Promise<Tag | null> => {
-        const token = localStorage.getItem("token");
+        const token = getToken();
         try {
             const response = await axios.post(
                 `${BACKEND_URL}/api/v1/tags`,
@@ -56,7 +57,7 @@ export function useTags() {
     };
 
     const deleteTag = async (tagId: string): Promise<void> => {
-        const token = localStorage.getItem("token");
+        const token = getToken();
         await axios.delete(`${BACKEND_URL}/api/v1/tags/${tagId}`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
