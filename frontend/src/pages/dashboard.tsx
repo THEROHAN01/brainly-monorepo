@@ -137,7 +137,7 @@ export function Dashboard() {
       <div>
         <Sidebar filter={filter} onFilterChange={setFilter} tags={availableTags} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main id="main-content" className='p-4 md:ml-72 min-h-screen bg-brand-bg border-2 border-brand-surface'>
+        <main id="main-content" className='p-4 md:ml-72 min-h-screen bg-brand-bg'>
           <CreateContentModal
             open={modalOpen}
             onClose={() => setModalOpen(false)}
