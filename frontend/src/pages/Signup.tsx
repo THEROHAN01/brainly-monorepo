@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { GoogleSignInButton } from "../components/ui/GoogleSignInButton";
@@ -114,9 +114,9 @@ export function Signup() {
                     {/* Footer */}
                     <div className="text-center text-sm text-brand-text/60">
                         Already have an account?{" "}
-                        <a href="/signin" className="text-brand-primary font-semibold hover:text-brand-primary/80 hover:underline transition-colors">
+                        <Link to="/signin" className="text-brand-primary font-semibold hover:text-brand-primary/80 hover:underline transition-colors">
                             Sign in
-                        </a>
+                        </Link>
                     </div>
                 </div>
         </div>

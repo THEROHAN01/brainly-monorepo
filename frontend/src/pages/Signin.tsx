@@ -4,7 +4,7 @@ import { Input } from "../components/ui/Input";
 import { GoogleSignInButton } from "../components/ui/GoogleSignInButton";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { setToken } from "../lib/auth";
 
 export function Signin() {
@@ -102,9 +102,9 @@ export function Signin() {
                     {/* Footer */}
                     <div className="text-center text-sm text-brand-text/60">
                         Don't have an account?{" "}
-                        <a href="/signup" className="text-brand-primary font-semibold hover:text-brand-primary/80 hover:underline transition-colors">
+                        <Link to="/signup" className="text-brand-primary font-semibold hover:text-brand-primary/80 hover:underline transition-colors">
                             Sign up
-                        </a>
+                        </Link>
                     </div>
                 </div>
         </div>
