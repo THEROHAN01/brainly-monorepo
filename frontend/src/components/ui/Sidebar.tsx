@@ -1,4 +1,3 @@
-import { Logo } from "../../icons/Logo";
 import { TwitterIcon } from "../../icons/TwitterIcon";
 import { YoutubeIcon } from "../../icons/YoutubeIcon";
 import { InstagramIcon } from "../../icons/InstagramIcon";
@@ -45,9 +44,9 @@ function SidebarContent({ filter = "all", onFilterChange, tags, onItemClick }: S
 
     return (
         <>
-            <div className="flex text-2xl pt-8 items-center text-brand-text pl-6">
-                <div className="pr-2 text-brand-primary">
-                    <Logo />
+            <div className="flex text-2xl pt-8 items-center text-brand-text pl-6 gap-3">
+                <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center shrink-0">
+                    <span className="text-brand-bg text-xl font-bold">B</span>
                 </div>
                 Brainly
             </div>
