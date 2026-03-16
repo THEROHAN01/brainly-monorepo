@@ -289,14 +289,14 @@ export function Landing() {
                                     </div>
                                     <h3 className="text-2xl font-bold mb-3">Save Instantly</h3>
                                     <p className="text-brand-text/60 text-lg max-w-md">
-                                        Paste any Twitter or YouTube link and we'll save it instantly. No extensions, no complex setup—just paste and go.
+                                        Paste any link — YouTube, Twitter, GitHub, Medium, and more — and we'll save it instantly. No extensions, no complex setup.
                                     </p>
 
                                     {/* Mini Demo */}
                                     <div className="mt-8 p-4 rounded-xl bg-brand-bg/50 border border-brand-surface">
                                         <div className="flex items-center gap-3">
                                             <div className="flex-1 bg-brand-surface rounded-lg px-4 py-2 text-brand-text/40 text-sm">
-                                                https://twitter.com/naval/status/...
+                                                https://github.com/owner/awesome-repo
                                             </div>
                                             <div className="px-4 py-2 bg-brand-primary text-brand-bg text-sm font-medium rounded-lg">
                                                 Save
@@ -328,7 +328,7 @@ export function Landing() {
                                 </div>
                                 <h3 className="text-xl font-bold mb-3">Organize Smart</h3>
                                 <p className="text-brand-text/60">
-                                    Create collections, add tags, and filter by platform. Find what you need in seconds.
+                                    Add tags, filter by platform, and sort by date or title. Find what you need in seconds.
                                 </p>
                             </MagicCard>
                         </BlurFade>
@@ -367,9 +367,9 @@ export function Landing() {
                                         <line x1="12" y1="2" x2="12" y2="15" />
                                     </svg>
                                 </div>
-                                <h3 className="text-xl font-bold mb-3">Share Collections</h3>
+                                <h3 className="text-xl font-bold mb-3">Share Your Brain</h3>
                                 <p className="text-brand-text/60">
-                                    Create public collections and share your curated content with the world.
+                                    Generate a public link and share your entire curated knowledge library with anyone.
                                 </p>
                             </MagicCard>
                         </BlurFade>
@@ -396,9 +396,9 @@ export function Landing() {
                                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-xl font-bold mb-3">Smart Suggestions</h3>
+                                <h3 className="text-xl font-bold mb-3">Rich Metadata</h3>
                                 <p className="text-brand-text/60">
-                                    AI-powered suggestions help you organize and discover related content.
+                                    Automatically fetches titles, descriptions, and thumbnails so your library is always informative.
                                 </p>
                             </MagicCard>
                         </BlurFade>
@@ -539,7 +539,7 @@ export function Landing() {
                                     ))}
                                 </div>
                                 <p className="text-brand-text/80 mb-6">
-                                    "I used to have bookmarks scattered everywhere. Now everything is in one place, beautifully organized. The collections feature is a game-changer."
+                                    "I used to have bookmarks scattered everywhere. Now everything is in one place, beautifully organized. Being able to share my whole brain with a link is incredible."
                                 </p>
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-bold">
