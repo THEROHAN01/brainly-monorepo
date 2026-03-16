@@ -9,6 +9,9 @@ import { ArrowRightIcon } from "../icons/ArrowRightIcon";
 import { ShieldIcon } from "../icons/ShieldIcon";
 import { TwitterIcon } from "../icons/TwitterIcon";
 import { YoutubeIcon } from "../icons/YoutubeIcon";
+import { GithubIcon } from "../icons/GithubIcon";
+import { MediumIcon } from "../icons/MediumIcon";
+import { InstagramIcon } from "../icons/InstagramIcon";
 import { GridPattern, TextShimmer, BlurFade, BorderBeam, MagicCard } from "../components/magicui";
 
 export function Landing() {
@@ -154,18 +157,30 @@ export function Landing() {
                                                 </div>
                                                 <span className="font-semibold">Brainly</span>
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-1">
                                                 <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-brand-surface text-brand-text">
                                                     <div className="w-4 h-4 rounded bg-brand-primary/20" />
                                                     <span className="text-sm">All Content</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-brand-text/60 hover:bg-brand-surface/50">
+                                                    <YoutubeIcon />
+                                                    <span className="text-sm">YouTube</span>
                                                 </div>
                                                 <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-brand-text/60 hover:bg-brand-surface/50">
                                                     <TwitterIcon />
                                                     <span className="text-sm">Twitter</span>
                                                 </div>
                                                 <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-brand-text/60 hover:bg-brand-surface/50">
-                                                    <YoutubeIcon />
-                                                    <span className="text-sm">YouTube</span>
+                                                    <GithubIcon />
+                                                    <span className="text-sm">GitHub</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-brand-text/60 hover:bg-brand-surface/50">
+                                                    <MediumIcon />
+                                                    <span className="text-sm">Medium</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-brand-text/60 hover:bg-brand-surface/50">
+                                                    <InstagramIcon />
+                                                    <span className="text-sm">Instagram</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -208,11 +223,11 @@ export function Landing() {
                                                 {/* Card 3 */}
                                                 <div className="rounded-xl border border-brand-surface bg-brand-surface-dark p-4 hover-lift hidden lg:block">
                                                     <div className="flex items-center gap-2 mb-3">
-                                                        <TwitterIcon />
-                                                        <span className="text-sm text-brand-text/60">Twitter Thread</span>
+                                                        <GithubIcon />
+                                                        <span className="text-sm text-brand-text/60">GitHub Repo</span>
                                                     </div>
                                                     <div className="h-20 bg-brand-surface rounded-lg mb-3" />
-                                                    <p className="text-sm text-brand-text/80 line-clamp-2">10 lessons from building startups...</p>
+                                                    <p className="text-sm text-brand-text/80 line-clamp-2">awesome-react — curated list of resources...</p>
                                                 </div>
                                             </div>
                                         </div>
