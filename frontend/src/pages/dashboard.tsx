@@ -79,6 +79,7 @@ export function Dashboard() {
       toast.error("Failed to delete content");
     } finally {
       setDeleting(false);
+      setDeleteConfirm({ open: false, contentId: null });
     }
   };
 

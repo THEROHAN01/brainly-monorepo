@@ -360,25 +360,29 @@ app.get("/api/v1/content/providers", (req: Request, res: Response) => {
 
 
 app.get("/api/v1/content" ,userMiddleware, async (req,res) =>{
+    try {
+        const userId = req.userId;
+        const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 1000, 1), 1000);
+        const skip = Math.max(parseInt(req.query.skip as string) || 0, 0);
 
-    const userId = req.userId;
-    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 1000);
-    const skip = Math.max(parseInt(req.query.skip as string) || 0, 0);
+        const [content, total] = await Promise.all([
+            ContentModel.find({ userId })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate("userId", "username")
+                .populate("tags", "name"),
+            ContentModel.countDocuments({ userId })
+        ]);
 
-    const [content, total] = await Promise.all([
-        ContentModel.find({ userId })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .populate("userId", "username")
-            .populate("tags", "name"),
-        ContentModel.countDocuments({ userId })
-    ]);
-
-    res.json({
-        content,
-        pagination: { total, limit, skip, hasMore: skip + limit < total }
-    });
+        res.json({
+            content,
+            pagination: { total, limit, skip, hasMore: skip + limit < total }
+        });
+    } catch (error) {
+        console.error("Content fetch error:", error);
+        res.status(500).json({ message: "Failed to fetch content" });
+    }
 });
 
 app.delete("/api/v1/content",userMiddleware,async (req,res) =>{
@@ -576,7 +580,7 @@ app.get("/api/v1/brain/:shareLink", async (req,res) =>{
             return ;
         }
 
-        const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 1000);
+        const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 1000, 1), 1000);
         const skip = Math.max(parseInt(req.query.skip as string) || 0, 0);
 
         const [content, total, user] = await Promise.all([

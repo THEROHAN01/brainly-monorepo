@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { TagInput } from "./TagInput";
-import { BACKEND_URL } from "../../config";
+import api from "../../lib/api";
 import axios from "axios";
 import { toast } from "sonner";
 import type { Tag } from "../../types/tag";
@@ -15,7 +15,6 @@ import {
 } from "./Dialog";
 import { CrossIcon } from "../../icons/CrossIcon";
 import { quickValidateUrl, type ValidationResult } from "../../providers";
-import { getToken } from "../../lib/auth";
 
 interface CreateContentModalProps {
     open: boolean;
@@ -103,12 +102,8 @@ export function CreateContentModal({
         // If client-side validation passes, verify with server for authoritative result
         if (quickResult.valid) {
             setValidating(true);
-            const token = getToken();
 
-            axios.post(`${BACKEND_URL}/api/v1/content/validate`,
-                { link: debouncedLink },
-                { headers: { "Authorization": `Bearer ${token}` } }
-            )
+            api.post("/api/v1/content/validate", { link: debouncedLink })
                 .then(response => {
                     setValidation(response.data);
                 })
@@ -146,7 +141,6 @@ export function CreateContentModal({
      */
     async function addContent() {
         const title = titleRef.current?.value;
-        const token = localStorage.getItem("token");
 
         if (!title || title.trim().length === 0) {
             toast.error("Please enter a title.");
@@ -160,21 +154,15 @@ export function CreateContentModal({
 
         setLoading(true);
         try {
-            await axios.post(`${BACKEND_URL}/api/v1/content`, {
+            await api.post("/api/v1/content", {
                 link,
                 title: title.trim(),
-                // Note: type is auto-detected on server from URL
                 tags: selectedTags.map(t => t._id)
-            }, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
             });
             toast.success("Content added successfully!");
             onContentAdded?.();
             onClose();
         } catch (err) {
-            // Show specific error message from server if available
             if (axios.isAxiosError(err) && err.response?.data?.message) {
                 toast.error(err.response.data.message);
             } else {
