@@ -148,7 +148,7 @@ export function CreateContentModal({
         const token = localStorage.getItem("token");
 
         if (!title || title.trim().length === 0) {
-            alert("Please enter a title.");
+            toast.error("Please enter a title.");
             return;
         }
 
