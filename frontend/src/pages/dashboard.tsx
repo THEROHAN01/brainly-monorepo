@@ -128,10 +128,16 @@ export function Dashboard() {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-primary focus:text-brand-bg focus:rounded-lg focus:font-semibold"
+      >
+        Skip to main content
+      </a>
       <div>
         <Sidebar filter={filter} onFilterChange={setFilter} tags={availableTags} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className='p-4 md:ml-72 min-h-screen bg-brand-bg border-2 border-brand-surface'>
+        <main id="main-content" className='p-4 md:ml-72 min-h-screen bg-brand-bg border-2 border-brand-surface'>
           <CreateContentModal
             open={modalOpen}
             onClose={() => setModalOpen(false)}
@@ -308,7 +314,7 @@ export function Dashboard() {
               ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
     </>
   )
