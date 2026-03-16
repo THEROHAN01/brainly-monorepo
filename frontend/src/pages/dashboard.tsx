@@ -170,7 +170,7 @@ export function Dashboard() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="hidden sm:block px-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow cursor-pointer"
+                className="px-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-shadow cursor-pointer"
               >
                 <option value="date-desc">Newest First</option>
                 <option value="date-asc">Oldest First</option>
