@@ -12,9 +12,12 @@ import { YoutubeIcon } from "../icons/YoutubeIcon";
 import { GithubIcon } from "../icons/GithubIcon";
 import { MediumIcon } from "../icons/MediumIcon";
 import { InstagramIcon } from "../icons/InstagramIcon";
+import { useState } from "react";
 import { GridPattern, TextShimmer, BlurFade, BorderBeam, MagicCard } from "../components/magicui";
 
 export function Landing() {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
     return (
         <div className="min-h-screen bg-brand-bg text-brand-text overflow-x-hidden">
             {/* Navigation */}
@@ -29,23 +32,54 @@ export function Landing() {
                             <span className="text-xl font-bold text-brand-text">Brainly</span>
                         </Link>
 
-                        {/* Nav Links */}
+                        {/* Nav Links - desktop */}
                         <div className="hidden md:flex items-center space-x-8">
                             <a href="#features" className="text-brand-text/70 hover:text-brand-primary transition-colors">Features</a>
                             <a href="#how-it-works" className="text-brand-text/70 hover:text-brand-primary transition-colors">How it Works</a>
                             <a href="#testimonials" className="text-brand-text/70 hover:text-brand-primary transition-colors">Testimonials</a>
                         </div>
 
-                        {/* Auth Buttons */}
+                        {/* Auth Buttons + Mobile Hamburger */}
                         <div className="flex items-center space-x-4">
                             <Link to="/signin" className="text-brand-text/70 hover:text-brand-primary transition-colors hidden sm:block">
                                 Sign In
                             </Link>
-                            <Link to="/signup">
+                            <Link to="/signup" className="hidden sm:block">
                                 <Button variant="primary" text="Get Started" size="sm" endIcon={<ArrowRightIcon size="sm" />} />
                             </Link>
+                            {/* Mobile hamburger */}
+                            <button
+                                onClick={() => setMobileMenuOpen(o => !o)}
+                                className="md:hidden p-2 text-brand-text/70 hover:text-brand-primary transition-colors rounded-lg hover:bg-brand-surface/50 cursor-pointer"
+                                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                            >
+                                {mobileMenuOpen ? (
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
                     </div>
+
+                    {/* Mobile Menu Dropdown */}
+                    {mobileMenuOpen && (
+                        <div className="md:hidden border-t border-brand-surface/50 py-4 space-y-2">
+                            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2 text-brand-text/70 hover:text-brand-primary transition-colors rounded-lg hover:bg-brand-surface/50">Features</a>
+                            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2 text-brand-text/70 hover:text-brand-primary transition-colors rounded-lg hover:bg-brand-surface/50">How it Works</a>
+                            <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2 text-brand-text/70 hover:text-brand-primary transition-colors rounded-lg hover:bg-brand-surface/50">Testimonials</a>
+                            <div className="pt-2 border-t border-brand-surface/50 flex flex-col gap-2 px-4">
+                                <Link to="/signin" onClick={() => setMobileMenuOpen(false)} className="text-brand-text/70 hover:text-brand-primary transition-colors py-2">Sign In</Link>
+                                <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                                    <Button variant="primary" text="Get Started" fullWidth endIcon={<ArrowRightIcon size="sm" />} />
+                                </Link>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </nav>
 
