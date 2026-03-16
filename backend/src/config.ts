@@ -13,7 +13,7 @@ export const config = {
         instagram: true,
         github:    true,
         medium:    true,
-        notion:    true,
+        notion:    false,  // Disabled — no extractor implemented yet, URLs would get stuck in 'pending'
     },
 
     /** Extractor settings — controls background metadata enrichment */
