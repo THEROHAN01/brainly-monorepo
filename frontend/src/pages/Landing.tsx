@@ -556,26 +556,26 @@ export function Landing() {
                 </div>
             </section>
 
-            {/* Stats Section */}
+            {/* Value Props Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8 border-y border-brand-surface/50">
                 <div className="max-w-5xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
                         <BlurFade delay={0.1}>
                             <div>
-                                <div className="text-5xl sm:text-6xl font-bold text-gradient mb-2">1M+</div>
-                                <div className="text-brand-text/60 text-lg">Content Saved</div>
+                                <div className="text-4xl sm:text-5xl font-bold text-gradient mb-2">6+</div>
+                                <div className="text-brand-text/60 text-lg">Platforms Supported</div>
                             </div>
                         </BlurFade>
                         <BlurFade delay={0.2}>
                             <div>
-                                <div className="text-5xl sm:text-6xl font-bold text-gradient mb-2">50K+</div>
-                                <div className="text-brand-text/60 text-lg">Happy Users</div>
+                                <div className="text-4xl sm:text-5xl font-bold text-gradient mb-2">Free</div>
+                                <div className="text-brand-text/60 text-lg">No credit card required</div>
                             </div>
                         </BlurFade>
                         <BlurFade delay={0.3}>
                             <div>
-                                <div className="text-5xl sm:text-6xl font-bold text-gradient mb-2">99.9%</div>
-                                <div className="text-brand-text/60 text-lg">Uptime</div>
+                                <div className="text-4xl sm:text-5xl font-bold text-gradient mb-2">&lt;30s</div>
+                                <div className="text-brand-text/60 text-lg">To get started</div>
                             </div>
                         </BlurFade>
                     </div>
