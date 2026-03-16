@@ -9,6 +9,7 @@ import { CardSkeletonGrid } from '../components/ui/CardSkeleton'
 import { PlusIcon } from '../icons/PlusIcon'
 import { ShareIcon } from '../icons/ShareIcon'
 import { SearchIcon } from '../icons/SearchIcon'
+import { CrossIcon } from '../icons/CrossIcon'
 import { Sidebar, type FilterType } from '../components/ui/Sidebar'
 import { useContents } from '../hooks/useContents'
 import { useUser } from '../hooks/useUser'
@@ -28,6 +29,8 @@ export function Dashboard() {
     open: false,
     contentId: null
   });
+  const [deleting, setDeleting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const { contents, loading, error, refetch } = useContents();
   const { user, loading: userLoading, logout } = useUser();
   const { tags: availableTags, createTag } = useTags();
@@ -62,8 +65,9 @@ export function Dashboard() {
   };
 
   const confirmDelete = async () => {
-    if (!deleteConfirm.contentId) return;
+    if (!deleteConfirm.contentId || deleting) return;
 
+    setDeleting(true);
     try {
       await api.delete("/api/v1/content", {
         data: { contentId: deleteConfirm.contentId }
@@ -72,6 +76,23 @@ export function Dashboard() {
       refetch();
     } catch {
       toast.error("Failed to delete content");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const response = await api.post("/api/v1/brain/share", { share: true });
+      const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Share link copied to clipboard!");
+    } catch {
+      toast.error("Failed to generate share link. Please try again.");
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -126,6 +147,7 @@ export function Dashboard() {
             confirmText="Delete"
             cancelText="Cancel"
             variant="danger"
+            loading={deleting}
             onConfirm={confirmDelete}
             onCancel={() => setDeleteConfirm({ open: false, contentId: null })}
           />
@@ -160,8 +182,9 @@ export function Dashboard() {
                   <button
                     onClick={() => setSearchQuery("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text/60 hover:text-brand-text transition-colors cursor-pointer"
+                    aria-label="Clear search"
                   >
-                    ✕
+                    <CrossIcon size="sm" />
                   </button>
                 )}
               </div>
@@ -196,36 +219,14 @@ export function Dashboard() {
                   className="hidden sm:inline-flex"
                 />
                 <Button
-                  onClick={async () => {
-                    try {
-                      const response = await api.post("/api/v1/brain/share", {
-                        share: true
-                      });
-                      const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
-                      await navigator.clipboard.writeText(shareUrl);
-                      toast.success("Share link copied to clipboard!");
-                    } catch {
-                      toast.error("Failed to generate share link. Please try again.");
-                    }
-                  }}
+                  onClick={handleShare}
                   variant="secondary"
                   text=""
                   startIcon={<ShareIcon size='lg' />}
                   className="sm:hidden"
                 />
                 <Button
-                  onClick={async () => {
-                    try {
-                      const response = await api.post("/api/v1/brain/share", {
-                        share: true
-                      });
-                      const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
-                      await navigator.clipboard.writeText(shareUrl);
-                      toast.success("Share link copied to clipboard!");
-                    } catch {
-                      toast.error("Failed to generate share link. Please try again.");
-                    }
-                  }}
+                  onClick={handleShare}
                   variant="secondary"
                   text="Share Brain"
                   startIcon={<ShareIcon size='lg' />}
