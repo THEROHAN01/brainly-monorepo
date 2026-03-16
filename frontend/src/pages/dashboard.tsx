@@ -31,6 +31,7 @@ export function Dashboard() {
   });
   const [deleting, setDeleting] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [shareActive, setShareActive] = useState(false);
   const { contents, loading, error, refetch } = useContents();
   const { user, loading: userLoading, logout } = useUser();
   const { tags: availableTags, createTag } = useTags();
@@ -85,12 +86,19 @@ export function Dashboard() {
     if (sharing) return;
     setSharing(true);
     try {
-      const response = await api.post("/api/v1/brain/share", { share: true });
-      const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Share link copied to clipboard!");
+      if (shareActive) {
+        await api.post("/api/v1/brain/share", { share: false });
+        setShareActive(false);
+        toast.success("Sharing disabled.");
+      } else {
+        const response = await api.post("/api/v1/brain/share", { share: true });
+        const shareUrl = `${window.location.origin}/share/${response.data.hash}`;
+        await navigator.clipboard.writeText(shareUrl);
+        setShareActive(true);
+        toast.success("Share link copied to clipboard!");
+      }
     } catch {
-      toast.error("Failed to generate share link. Please try again.");
+      toast.error(shareActive ? "Failed to disable sharing." : "Failed to generate share link. Please try again.");
     } finally {
       setSharing(false);
     }
@@ -234,15 +242,17 @@ export function Dashboard() {
                 />
                 <Button
                   onClick={handleShare}
-                  variant="secondary"
+                  loading={sharing}
+                  variant={shareActive ? "danger" : "secondary"}
                   text=""
                   startIcon={<ShareIcon size='lg' />}
                   className="sm:hidden"
                 />
                 <Button
                   onClick={handleShare}
-                  variant="secondary"
-                  text="Share Brain"
+                  loading={sharing}
+                  variant={shareActive ? "danger" : "secondary"}
+                  text={shareActive ? "Stop Sharing" : "Share Brain"}
                   startIcon={<ShareIcon size='lg' />}
                   className="hidden sm:inline-flex"
                 />
