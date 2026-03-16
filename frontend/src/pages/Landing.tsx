@@ -239,15 +239,23 @@ export function Landing() {
                 </div>
             </section>
 
-            {/* Logos Section */}
+            {/* Platforms Section */}
             <section className="py-16 px-4 sm:px-6 lg:px-8 border-y border-brand-surface/50">
                 <div className="max-w-7xl mx-auto">
-                    <p className="text-center text-brand-text/40 text-sm mb-8">TRUSTED BY TEAMS AT</p>
-                    <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
-                        {["TechCorp", "DataFlow", "CloudBase", "InnovateLab", "StartupX", "ScaleUp"].map((company, i) => (
-                            <BlurFade key={company} delay={0.1 * i}>
-                                <div className="text-brand-text/30 hover:text-brand-text/60 transition-colors text-xl font-bold tracking-wide">
-                                    {company}
+                    <p className="text-center text-brand-text/40 text-sm mb-8 uppercase tracking-widest">Save from any platform</p>
+                    <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10">
+                        {[
+                            { icon: <YoutubeIcon />, label: "YouTube" },
+                            { icon: <TwitterIcon />, label: "Twitter / X" },
+                            { icon: <GithubIcon />, label: "GitHub" },
+                            { icon: <MediumIcon />, label: "Medium" },
+                            { icon: <InstagramIcon />, label: "Instagram" },
+                            { icon: <GlobeIcon size="sm" />, label: "Any URL" },
+                        ].map(({ icon, label }, i) => (
+                            <BlurFade key={label} delay={0.1 * i}>
+                                <div className="flex items-center gap-2 text-brand-text/40 hover:text-brand-text/70 transition-colors">
+                                    <span className="opacity-60">{icon}</span>
+                                    <span className="text-sm font-medium">{label}</span>
                                 </div>
                             </BlurFade>
                         ))}
