@@ -113,7 +113,7 @@ export function Dashboard() {
       const query = searchQuery.toLowerCase();
       const matchesTitle = content.title.toLowerCase().includes(query);
       const matchesUrl = content.link.toLowerCase().includes(query);
-      const matchesTags = content.tags.some((tag: any) =>
+      const matchesTags = content.tags.some((tag) =>
         tag.name?.toLowerCase().includes(query)
       );
       return matchesTitle || matchesUrl || matchesTags;
