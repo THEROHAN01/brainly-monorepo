@@ -2,10 +2,26 @@ import { useEffect, useRef } from "react";
 import { ShareIcon } from "../../icons/ShareIcon";
 import { TrashIcon } from "../../icons/TrashIcon";
 import { CopyIcon } from "../../icons/CopyIcon";
+import { YoutubeIcon } from "../../icons/YoutubeIcon";
+import { TwitterIcon } from "../../icons/TwitterIcon";
+import { InstagramIcon } from "../../icons/InstagramIcon";
+import { GithubIcon } from "../../icons/GithubIcon";
+import { MediumIcon } from "../../icons/MediumIcon";
+import { NotionIcon } from "../../icons/NotionIcon";
+import { GlobeIcon } from "../../icons/GlobeIcon";
 import { TagBadge } from "./TagBadge";
 import { getProvider, getEmbedUrl as getProviderEmbedUrl } from "../../providers";
 import { toast } from "sonner";
 import type { Tag } from "../../types/tag";
+
+const typeIconMap: Record<string, React.ReactNode> = {
+    youtube:   <YoutubeIcon size="md" />,
+    twitter:   <TwitterIcon size="md" />,
+    instagram: <InstagramIcon size="md" />,
+    github:    <GithubIcon size="md" />,
+    medium:    <MediumIcon size="md" />,
+    notion:    <NotionIcon size="md" />,
+};
 
 declare global {
     interface Window {
@@ -70,8 +86,8 @@ export function Card({ id, title, link, type, contentId, tags, onDelete }: CardP
             <div className="p-4 bg-brand-bg rounded-md border-brand-surface border min-h-48">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center text-md text-brand-text flex-1 min-w-0">
-                        <div className="pr-2 text-brand-text flex-shrink-0">
-                            <ShareIcon size="md" />
+                        <div className="pr-2 text-brand-text-muted flex-shrink-0">
+                            {typeIconMap[type] ?? <GlobeIcon size="md" />}
                         </div>
                         <span className="truncate">{title}</span>
                     </div>

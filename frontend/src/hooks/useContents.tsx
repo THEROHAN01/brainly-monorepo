@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { BACKEND_URL } from "../config";
+import api from "../lib/api";
 import axios from "axios";
-import { getToken } from "../lib/auth";
 import type { Tag } from "../types/tag";
 
 /**
@@ -16,6 +15,7 @@ export interface Content {
     contentId?: string;  // Extracted content ID for embed generation
     userId: string;
     tags: Tag[];
+    createdAt?: string;
 }
 
 export function useContents() {
@@ -24,27 +24,16 @@ export function useContents() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchContents = useCallback(async () => {
-        const token = getToken();
-
-        if (!token) {
-            setLoading(false);
-            setError("No authentication token found");
-            return;
-        }
-
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`${BACKEND_URL}/api/v1/content`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+            const response = await api.get("/api/v1/content");
             setContents(response.data.content || []);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
+            // 401 is handled by the api interceptor (redirects to signin)
+            if (axios.isAxiosError(err) && err.response?.status !== 401) {
                 setError(err.response?.data?.message || "Failed to fetch contents");
-            } else {
+            } else if (!axios.isAxiosError(err)) {
                 setError("Failed to fetch contents");
             }
             setContents([]);
