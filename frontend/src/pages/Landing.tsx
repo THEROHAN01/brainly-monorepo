@@ -60,7 +60,7 @@ export function Landing() {
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-primary/30 mb-8 badge-shimmer relative overflow-hidden">
                                 <BorderBeam size={100} duration={8} />
                                 <span className="w-2 h-2 bg-brand-primary rounded-full animate-sparkle" />
-                                <span className="text-sm text-brand-text/90 font-medium">Trusted by 10,000+ knowledge collectors</span>
+                                <span className="text-sm text-brand-text/90 font-medium">Your personal knowledge library</span>
                             </div>
                         </BlurFade>
 
@@ -70,7 +70,7 @@ export function Landing() {
                                 Never Lose Another
                                 <span className="block mt-2">
                                     <TextShimmer className="text-5xl sm:text-6xl lg:text-7xl font-bold">
-                                        Great Tweet or Video
+                                        Great Find Again
                                     </TextShimmer>
                                 </span>
                             </h1>
@@ -79,7 +79,7 @@ export function Landing() {
                         {/* Subheadline */}
                         <BlurFade delay={0.2}>
                             <p className="text-xl sm:text-2xl text-brand-text/60 mb-10 max-w-2xl mx-auto">
-                                Save, organize, and access your favorite Twitter and YouTube content in one beautiful place.
+                                Save, organize, and access content from YouTube, Twitter, GitHub, Medium, Instagram, Notion, and more — all in one beautiful place.
                             </p>
                         </BlurFade>
 
@@ -424,7 +424,7 @@ export function Landing() {
                                     </div>
                                     <h3 className="text-xl font-bold mb-3">Save Your Content</h3>
                                     <p className="text-brand-text/60">
-                                        Paste links to Twitter threads or YouTube videos. We handle the rest.
+                                        Paste any link — YouTube, Twitter, GitHub, Medium, Instagram, Notion, or any URL. We handle the rest.
                                     </p>
                                 </div>
                             </BlurFade>
@@ -609,7 +609,7 @@ export function Landing() {
                                 <span className="text-xl font-bold text-brand-text">Brainly</span>
                             </div>
                             <p className="text-brand-text/50 text-sm max-w-xs">
-                                Your personal content library for Twitter and YouTube. Never lose valuable content again.
+                                Your personal knowledge library. Save from YouTube, Twitter, GitHub, Medium, Instagram, Notion, and more.
                             </p>
                         </div>
 
