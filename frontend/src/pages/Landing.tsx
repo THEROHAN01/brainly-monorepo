@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { ZapIcon } from "../icons/ZapIcon";
 import { FolderIcon } from "../icons/FolderIcon";
@@ -18,12 +19,12 @@ export function Landing() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <a href="/" className="flex items-center space-x-3 group">
+                        <Link to="/" className="flex items-center space-x-3 group">
                             <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                 <span className="text-brand-bg text-xl font-bold">B</span>
                             </div>
                             <span className="text-xl font-bold text-brand-text">Brainly</span>
-                        </a>
+                        </Link>
 
                         {/* Nav Links */}
                         <div className="hidden md:flex items-center space-x-8">
@@ -34,12 +35,12 @@ export function Landing() {
 
                         {/* Auth Buttons */}
                         <div className="flex items-center space-x-4">
-                            <a href="/signin" className="text-brand-text/70 hover:text-brand-primary transition-colors hidden sm:block">
+                            <Link to="/signin" className="text-brand-text/70 hover:text-brand-primary transition-colors hidden sm:block">
                                 Sign In
-                            </a>
-                            <a href="/signup">
+                            </Link>
+                            <Link to="/signup">
                                 <Button variant="primary" text="Get Started" size="sm" endIcon={<ArrowRightIcon size="sm" />} />
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -85,7 +86,7 @@ export function Landing() {
                         {/* CTAs */}
                         <BlurFade delay={0.3}>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                                <a href="/signup">
+                                <Link to="/signup">
                                     <Button
                                         variant="primary"
                                         text="Start Saving for Free"
@@ -93,7 +94,7 @@ export function Landing() {
                                         glow
                                         endIcon={<ArrowRightIcon size="sm" />}
                                     />
-                                </a>
+                                </Link>
                                 <a href="#how-it-works">
                                     <Button variant="secondary" text="See How It Works" size="lg" />
                                 </a>
@@ -578,7 +579,7 @@ export function Landing() {
                             Join thousands of creators, researchers, and learners who never lose track of valuable content.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <a href="/signup">
+                            <Link to="/signup">
                                 <Button
                                     variant="primary"
                                     text="Get Started Free"
@@ -586,7 +587,7 @@ export function Landing() {
                                     glow
                                     endIcon={<ArrowRightIcon size="sm" />}
                                 />
-                            </a>
+                            </Link>
                         </div>
                         <p className="mt-6 text-brand-text/40 text-sm">
                             Free forever • No credit card required • Setup in 30 seconds
