@@ -82,14 +82,14 @@ export function Signup() {
 
                         {/* Username Input */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-brand-text/80">Username</label>
-                            <Input ref={usernameRef} placeholder="Choose a username" />
+                            <label htmlFor="signup-username" className="block text-sm font-semibold text-brand-text/80">Username</label>
+                            <Input id="signup-username" ref={usernameRef} placeholder="Choose a username" />
                         </div>
 
                         {/* Password Input */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-brand-text/80">Password</label>
-                            <Input ref={passwordRef} placeholder="Create a strong password" type="password" />
+                            <label htmlFor="signup-password" className="block text-sm font-semibold text-brand-text/80">Password</label>
+                            <Input ref={passwordRef} id="signup-password" placeholder="Create a strong password" type="password" />
                         </div>
 
                         {/* Signup Button */}

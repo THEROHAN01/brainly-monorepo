@@ -209,20 +209,21 @@ export function CreateContentModal({
                 <div className="space-y-5 mt-4">
                     {/* Title Input */}
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-brand-text/80">Title</label>
-                        <Input ref={titleRef} placeholder="Enter content title" />
+                        <label htmlFor="content-title" className="block text-sm font-semibold text-brand-text/80">Title</label>
+                        <Input id="content-title" ref={titleRef} placeholder="Enter content title" />
                     </div>
 
                     {/* Link Input with Auto-Detection */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <label className="block text-sm font-semibold text-brand-text/80">Link</label>
+                            <label htmlFor="content-link" className="block text-sm font-semibold text-brand-text/80">Link</label>
                             {/* Show type badge when URL is valid */}
                             {validation?.valid && validation.type && validation.displayName && (
                                 <TypeBadge type={validation.type} displayName={validation.displayName} />
                             )}
                         </div>
                         <Input
+                            id="content-link"
                             value={link}
                             onChange={handleLinkChange}
                             placeholder="Paste any URL (YouTube, Twitter, or any link)"

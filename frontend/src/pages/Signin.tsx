@@ -70,14 +70,14 @@ export function Signin() {
 
                         {/* Username Input */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-brand-text/80">Username</label>
-                            <Input ref={usernameRef} placeholder="Enter your username" />
+                            <label htmlFor="signin-username" className="block text-sm font-semibold text-brand-text/80">Username</label>
+                            <Input id="signin-username" ref={usernameRef} placeholder="Enter your username" />
                         </div>
 
                         {/* Password Input */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-brand-text/80">Password</label>
-                            <Input ref={passwordRef} placeholder="Enter your password" type="password" />
+                            <label htmlFor="signin-password" className="block text-sm font-semibold text-brand-text/80">Password</label>
+                            <Input id="signin-password" ref={passwordRef} placeholder="Enter your password" type="password" />
                         </div>
 
                         {/* Signin Button */}
