@@ -17,6 +17,7 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   variant?: 'danger' | 'warning';
+  loading?: boolean;
 }
 
 export function ConfirmDialog({
@@ -27,7 +28,8 @@ export function ConfirmDialog({
   cancelText = 'Cancel',
   onConfirm,
   onCancel,
-  variant = 'danger'
+  variant = 'danger',
+  loading = false
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}>
@@ -50,6 +52,7 @@ export function ConfirmDialog({
             }}
             variant="primary"
             text={confirmText}
+            loading={loading}
             className={variant === 'danger' ? 'bg-red-500 hover:bg-red-600' : ''}
           />
         </DialogFooter>
