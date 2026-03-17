@@ -636,6 +636,8 @@ app.get("/api/v1/me", userMiddleware, async (req: Request, res: Response) => {
 });
 
 
+export { app };
+
 async function main() {
     await connectDB();
     app.listen(PORT, () => {
@@ -644,7 +646,10 @@ async function main() {
     await startEnrichmentService();
 }
 
-main().catch((err) => {
-    logger.fatal({ err }, 'Fatal startup error');
-    process.exit(1);
-});
+// Only auto-start when run directly (not imported for testing)
+if (!process.env.VITEST) {
+    main().catch((err) => {
+        logger.fatal({ err }, 'Fatal startup error');
+        process.exit(1);
+    });
+}
