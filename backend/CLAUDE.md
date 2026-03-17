@@ -16,6 +16,8 @@ cd backend
 npm run build      # Compile TypeScript to dist/
 npm run start      # Run compiled server (dist/index.js)
 npm run dev        # Build and start (npm run build && npm run start)
+npm test           # Run all tests (vitest)
+npm run test:watch # Run tests in watch mode
 ```
 
 ### Frontend (frontend/)
@@ -25,6 +27,8 @@ npm run dev        # Start Vite dev server with HMR
 npm run build      # TypeScript check + Vite production build
 npm run lint       # Run ESLint
 npm run preview    # Preview production build
+npm test           # Run all tests (vitest)
+npm run test:watch # Run tests in watch mode
 ```
 
 ## Architecture
@@ -40,6 +44,7 @@ npm run preview    # Preview production build
 - `src/providers/` - Content provider system for URL parsing and type detection
 - `src/extractors/` - Metadata enrichment extractors (per-platform scrapers)
 - `src/services/enrichment.service.ts` - Orchestrates extractor selection and enrichment
+- `src/__tests__/` - Test suites (providers, auth, content, share)
 
 **API Endpoints:**
 - `POST /api/v1/signup` - User registration (bcrypt password hashing)
@@ -112,6 +117,7 @@ When content is saved, `enrichment.service.ts` selects an extractor based on con
 - `src/providers/` - Frontend content provider mirrors
 - `src/icons/` - SVG icon components
 - `src/config.ts` - BACKEND_URL constant from env
+- `src/__tests__/` - Test suites (providers, API interceptor)
 
 **Routing:**
 - `/` - Landing page
@@ -120,6 +126,19 @@ When content is saved, `enrichment.service.ts` selects an extractor based on con
 - `/dashboard` - Main app interface (protected)
 - `/share/:shareLink` - Public shared brain view
 
+
+## Testing
+
+Both backend and frontend use **Vitest**. See `docs/testing-strategy.md` for full details.
+
+- Backend tests use `mongodb-memory-server` (in-memory DB) + `supertest` (HTTP assertions)
+- Frontend tests run in `jsdom` environment
+- Tests must be run from their respective directories (`cd backend && npm test`)
+- `src/__tests__/setup.ts` handles DB lifecycle — env vars are set at top level before any module import
+- `afterEach` clears all collections — use `beforeEach` (not `beforeAll`) for user/data setup
+- Rate limiters are relaxed during tests via `process.env.VITEST` check
+- `app` is exported from `index.ts`; `main()` is guarded so it only runs outside tests
+- CI: `.github/workflows/ci.yml` runs type-check + tests on push/PR to main
 
 ## Environment Variables
 
@@ -145,3 +164,5 @@ VITE_GOOGLE_CLIENT_ID= # Google OAuth client ID (must match backend)
 ## Key Technologies
 - Backend: Express 4, Mongoose 8, JWT (jsonwebtoken), bcrypt, Pino, express-rate-limit
 - Frontend: React 19, React Router 7, Tailwind CSS 4, Vite 7, Axios, CVA (class-variance-authority), sonner (toasts), MagicUI
+- Testing: Vitest 4, supertest, mongodb-memory-server, jsdom
+- CI: GitHub Actions

@@ -137,6 +137,8 @@ The frontend will be running at `http://localhost:5173`
 npm run build      # Compile TypeScript to dist/
 npm run start      # Run compiled server (dist/index.js)
 npm run dev        # Build and start (npm run build && npm run start)
+npm test           # Run all tests
+npm run test:watch # Run tests in watch mode
 ```
 
 ### Frontend Commands
@@ -145,6 +147,8 @@ npm run dev        # Start Vite dev server with HMR
 npm run build      # TypeScript check + Vite production build
 npm run lint       # Run ESLint
 npm run preview    # Preview production build
+npm test           # Run all tests
+npm run test:watch # Run tests in watch mode
 ```
 
 ## API Endpoints
@@ -163,6 +167,25 @@ npm run preview    # Preview production build
 ### Brain Sharing
 - `POST /api/v1/brain/share` - Create/delete shareable link (protected)
 - `GET /api/v1/brain/:shareLink` - Get shared brain content (public)
+
+## Testing
+
+Both projects use **Vitest** as the test runner. Backend tests use an in-memory MongoDB (`mongodb-memory-server`) and `supertest` for HTTP endpoint testing. Frontend tests run in a `jsdom` environment.
+
+```bash
+# Run all tests
+cd backend && npm test
+cd frontend && npm test
+```
+
+**Current coverage (78 tests):**
+- Auth: signup validation, signin, JWT middleware
+- Content: CRUD, auto-type-detection, pagination, ownership isolation
+- Share: create/reuse/revoke share links, public access
+- Providers: URL parsing for YouTube, Twitter, generic links (backend + frontend)
+- API: Axios instance configuration and interceptors
+
+CI runs automatically via GitHub Actions on push/PR to `main`. See [docs/testing-strategy.md](./docs/testing-strategy.md) for the full testing strategy.
 
 ## Features
 
@@ -185,6 +208,7 @@ For details on the migration process, see [MIGRATION.md](./MIGRATION.md).
 
 - Frontend README: [frontend/README.md](./frontend/README.md)
 - Backend Documentation: [backend/CLAUDE.md](./backend/CLAUDE.md)
+- Testing Strategy: [docs/testing-strategy.md](./docs/testing-strategy.md)
 - Provider System: [frontend/docs/provider-system/](./frontend/docs/provider-system/)
 - Product Roadmap: [frontend/PRODUCT_ROADMAP.md](./frontend/PRODUCT_ROADMAP.md)
 
