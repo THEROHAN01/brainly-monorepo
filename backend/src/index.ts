@@ -60,11 +60,13 @@ app.use(cors({
 app.use(express.json());
 
 // --- Rate Limiters ---
+// Disabled during tests (max: 0 = unlimited in express-rate-limit)
+const isTest = !!process.env.VITEST;
 
 // Global: 100 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isTest ? 10000 : 100,
   standardHeaders: true,   // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false,     // Disable `X-RateLimit-*` headers
   message: { message: "Too many requests, please try again later." },
@@ -73,7 +75,7 @@ const globalLimiter = rateLimit({
 // Strict: auth endpoints — 10 attempts per 15 minutes per IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isTest ? 10000 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many authentication attempts, please try again after 15 minutes." },
@@ -82,7 +84,7 @@ const authLimiter = rateLimit({
 // Content creation: 30 per 15 minutes per IP
 const contentCreationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: isTest ? 10000 : 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many content submissions, please try again later." },
