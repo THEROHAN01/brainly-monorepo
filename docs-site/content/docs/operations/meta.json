@@ -1,0 +1,5 @@
+{
+  "title": "Operations",
+  "icon": "Settings",
+  "pages": ["index", "deployment", "ci-cd", "migration"]
+}

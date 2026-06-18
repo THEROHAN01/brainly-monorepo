@@ -1,0 +1,5 @@
+{
+  "title": "Frontend",
+  "icon": "MonitorSmartphone",
+  "pages": ["index", "pages", "components", "hooks", "providers-and-lib"]
+}

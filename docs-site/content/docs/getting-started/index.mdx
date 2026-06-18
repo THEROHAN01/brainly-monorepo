@@ -1,0 +1,44 @@
+---
+title: Overview
+description: What Brainly is, how the monorepo is laid out, and what you need before running it.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Brainly is a monorepo with two independently-deployable packages:
+
+- **`backend/`** — Node.js + Express + TypeScript API server, MongoDB via Mongoose.
+- **`frontend/`** — React 19 + Vite + TypeScript SPA, Tailwind CSS v4.
+
+```text
+brainly-monorepo/
+├── backend/            # Express + MongoDB + TypeScript API
+│   ├── src/
+│   ├── .env / .env.example
+│   └── package.json
+├── frontend/           # React 19 + Vite + TypeScript SPA
+│   ├── src/
+│   ├── .env / .env.example
+│   └── package.json
+├── docs/               # Hand-written engineering docs (source for this site)
+├── docs-site/          # This Fumadocs documentation site
+├── docker-compose.yml  # Local MongoDB for development
+├── .github/workflows/  # CI
+├── MIGRATION.md        # Monorepo migration history
+└── README.md
+```
+
+## Prerequisites
+
+- **Node.js** v18 or higher (the backend/frontend target Node 20 in CI).
+- **npm**
+- A **MongoDB** database — local (via the bundled `docker-compose.yml`) or Atlas.
+- A **Google OAuth Client ID** (only required if you want Google sign-in).
+
+<Callout type="info" title="Two packages, two installs">
+  `backend/` and `frontend/` each keep their own `package.json`. There is no
+  root workspace — install dependencies inside each package separately.
+</Callout>
+
+Continue to [Installation](/docs/getting-started/installation) for step-by-step
+setup.

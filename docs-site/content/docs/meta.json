@@ -1,0 +1,24 @@
+{
+  "title": "Brainly",
+  "root": true,
+  "pages": [
+    "index",
+    "---Guides---",
+    "getting-started",
+    "contributing",
+    "troubleshooting",
+    "architecture",
+    "---Backend---",
+    "backend",
+    "api-reference",
+    "---Frontend---",
+    "frontend",
+    "---Quality & Ops---",
+    "testing",
+    "operations",
+    "changelog",
+    "roadmap",
+    "---Reference---",
+    "glossary"
+  ]
+}

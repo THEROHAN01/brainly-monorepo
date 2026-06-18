@@ -1,0 +1,5 @@
+{
+  "title": "Changelog",
+  "icon": "History",
+  "pages": ["index", "security-fixes", "functionality-fixes"]
+}

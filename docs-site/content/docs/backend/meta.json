@@ -1,0 +1,11 @@
+{
+  "title": "Backend",
+  "icon": "Server",
+  "pages": [
+    "index",
+    "providers",
+    "extractors",
+    "enrichment-service",
+    "security"
+  ]
+}

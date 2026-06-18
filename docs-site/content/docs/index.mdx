@@ -1,0 +1,59 @@
+---
+title: Brainly Documentation
+description: Engineering reference for Brainly — a "second brain" personal knowledge management app.
+icon: Brain
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+**Brainly** is a "second brain" personal knowledge management app. Save any URL
+(YouTube, Twitter/X, GitHub, articles, etc.), auto-enrich it with metadata, tag
+it, and optionally share your whole brain publicly via a short link.
+
+This site is the complete engineering reference for the monorepo — architecture,
+backend internals, the full API, the frontend, testing, operations, and the
+forward-looking AI roadmap.
+
+## The stack at a glance
+
+| Layer | Technology |
+| --- | --- |
+| **Backend** | Node.js + Express 4 + TypeScript, MongoDB via Mongoose 8, Zod, Pino |
+| **Frontend** | React 19 + Vite 7 + TypeScript SPA, React Router 7, Tailwind CSS v4 |
+| **Auth** | JWT + bcrypt, Google OAuth |
+| **Testing** | Vitest, supertest, mongodb-memory-server, jsdom |
+| **CI** | GitHub Actions (parallel backend + frontend jobs) |
+
+<Callout title="New here?">
+  Start with the [Getting Started](/docs/getting-started) guide to get the app
+  running locally, then skim the [Architecture overview](/docs/architecture) to
+  understand how the pieces fit together.
+</Callout>
+
+## Explore the docs
+
+<Cards>
+  <Card title="Getting Started" href="/docs/getting-started" description="Local setup, environment variables, and the commands you'll use day to day." />
+  <Card title="Architecture" href="/docs/architecture" description="How providers, extractors, and the enrichment pipeline fit together. Data models and the enrichment state machine." />
+  <Card title="Backend" href="/docs/backend" description="Server, database layer, middleware, the provider/extractor systems, the enrichment service, and security hardening." />
+  <Card title="API Reference" href="/docs/api-reference" description="Every endpoint — auth, content, tags, brain sharing, and user — with request/response shapes and sequence diagrams." />
+  <Card title="Frontend" href="/docs/frontend" description="Routing, pages, components, hooks, and the client-side provider mirror." />
+  <Card title="Testing" href="/docs/testing" description="The Vitest-based testing strategy across backend and frontend." />
+  <Card title="Operations" href="/docs/operations" description="Deployment, CI/CD pipeline, troubleshooting, and the monorepo migration history." />
+  <Card title="Changelog" href="/docs/changelog" description="Dated log of security and functionality fixes applied to the app." />
+  <Card title="Roadmap" href="/docs/roadmap" description="The planned AI intelligence layer — semantic search, summarization, auto-tagging, and RAG chat." />
+  <Card title="Reference" href="/docs/glossary" description="Glossary of Brainly's domain vocabulary — providers, extractors, enrichment status, and more." />
+</Cards>
+
+## Core capabilities
+
+- **Paste-to-save** — paste any URL; the system auto-detects the platform
+  (YouTube, Twitter/X, GitHub, Medium, Instagram, or generic). A Notion provider
+  exists but is disabled (no extractor yet — see
+  [Functionality Fixes](/docs/changelog/functionality-fixes)).
+- **Background enrichment** — a polling service fetches metadata (titles,
+  descriptions, thumbnails, transcripts, README content) from platform APIs.
+- **Tagging** — organize content with user-scoped tags.
+- **Public sharing** — share your entire brain via a short read-only link.
+- **Dual auth** — Google OAuth and local username/password.

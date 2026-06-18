@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# post-commit: auto-update the documentation site to reflect code changes,
+# using Claude Code in headless mode.
+#
+# Enable for this repo with:   git config core.hooksPath .githooks
+#
+# Behavior:
+#   * Runs only when a commit touches application source (backend/src,
+#     frontend/src, or the package.json files). Doc-only commits are ignored.
+#   * Launches `claude -p` in the BACKGROUND so your commit returns instantly.
+#   * Claude may only Read/Edit/Write/Grep/Glob (no Bash) and is instructed to
+#     edit only docs-site/content/docs. The result is left in your working tree
+#     for review — nothing is committed automatically by default.
+#
+# Env toggles:
+#   DOCS_HOOK_DISABLED=1   skip entirely
+#   DOCS_HOOK_AUTOCOMMIT=1 auto-commit the doc updates (guarded against recursion)
+#   DOCS_HOOK_MODEL=...    override the model passed to claude
+#
+set -euo pipefail
+
+[ "${DOCS_HOOK_DISABLED:-}" = "1" ] && exit 0
+
+if ! command -v claude >/dev/null 2>&1; then
+  echo "[docs-hook] 'claude' CLI not found on PATH; skipping doc auto-update." >&2
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+COMMIT_SHA="$(git rev-parse HEAD)"
+CHANGED="$(git diff-tree --no-commit-id --name-only -r "$COMMIT_SHA" || true)"
+
+# Only react to source changes; ignore commits that only touch docs.
+SRC_CHANGED="$(printf '%s\n' "$CHANGED" \
+  | grep -E '^(backend/src/|frontend/src/|backend/package\.json|frontend/package\.json)' || true)"
+[ -z "$SRC_CHANGED" ] && exit 0
+
+LOCK="$REPO_ROOT/.git/docs-hook.lock"
+LOG="$REPO_ROOT/.git/docs-hook.log"
+# If a previous run is still going, don't stack another.
+[ -e "$LOCK" ] && { echo "[docs-hook] A previous run is still active; skipping." >&2; exit 0; }
+
+echo "[docs-hook] Source changed in ${COMMIT_SHA:0:8}; updating docs in the background." >&2
+echo "[docs-hook] Progress: tail -f .git/docs-hook.log" >&2
+
+# --- detached background worker -------------------------------------------
+(
+  touch "$LOCK"
+  trap 'rm -f "$LOCK"' EXIT
+
+  {
+    echo "=== docs-hook run for $COMMIT_SHA at $(date -u +%FT%TZ) ==="
+  } >> "$LOG" 2>&1
+
+  # Cap the diff size so the prompt stays reasonable.
+  DIFF="$(git show --stat --patch "$COMMIT_SHA" -- \
+            backend/src frontend/src backend/package.json frontend/package.json \
+          2>/dev/null | head -c 60000)"
+
+  PROMPT="A commit was just made to the Brainly monorepo. Update the Fumadocs documentation under docs-site/content/docs/ so it stays accurate for these code changes.
+
+Rules:
+- Only edit files under docs-site/content/docs/. Never touch application code.
+- Match the existing page style, frontmatter, tables, and cross-links.
+- If the change is internal and warrants no doc update, make NO edits.
+- Prefer surgical edits to the specific affected pages (api-reference/, backend/, frontend/, architecture/, getting-started/).
+
+Commit ${COMMIT_SHA}:
+
+${DIFF}"
+
+  MODEL_ARG=()
+  [ -n "${DOCS_HOOK_MODEL:-}" ] && MODEL_ARG=(--model "${DOCS_HOOK_MODEL}")
+
+  # Headless, restricted to file-editing tools (no Bash), scoped to docs-site.
+  claude -p "$PROMPT" \
+    --allowedTools "Read Edit Write Grep Glob" \
+    --add-dir "$REPO_ROOT/docs-site" \
+    "${MODEL_ARG[@]}" \
+    >> "$LOG" 2>&1 || echo "[docs-hook] claude run failed; see $LOG" >> "$LOG"
+
+  if git diff --quiet -- docs-site/content/docs; then
+    echo "[docs-hook] No documentation changes were needed." >> "$LOG"
+  else
+    echo "[docs-hook] Docs updated. Review with: git diff docs-site/content/docs" >> "$LOG"
+    if [ "${DOCS_HOOK_AUTOCOMMIT:-0}" = "1" ]; then
+      git add docs-site/content/docs
+      # DOCS_HOOK_DISABLED guards against the post-commit hook re-triggering itself.
+      DOCS_HOOK_DISABLED=1 git commit \
+        -m "docs: auto-sync documentation for ${COMMIT_SHA:0:8} [skip-docs-hook]" \
+        >> "$LOG" 2>&1 || true
+    fi
+  fi
+) >/dev/null 2>&1 &
+
+exit 0

@@ -1,0 +1,5 @@
+{
+  "title": "API Reference",
+  "icon": "Webhook",
+  "pages": ["index", "authentication", "content", "tags", "brain-sharing", "user"]
+}
